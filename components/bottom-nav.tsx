@@ -1,10 +1,12 @@
-"use client"
+"use client";
 
-import { ShoppingCart, Coffee, Calendar } from "lucide-react"
+import { ShoppingCart, Coffee, Calendar, ShoppingBag } from "lucide-react";
+
+export type Screen = "delivery" | "vending" | "events" | "cart";
 
 interface BottomNavProps {
-  activeScreen: "delivery" | "vending" | "events"
-  onScreenChange: (screen: "delivery" | "vending" | "events") => void
+  activeScreen: Screen;
+  onScreenChange: (screen: Screen) => void;
 }
 
 export function BottomNav({ activeScreen, onScreenChange }: BottomNavProps) {
@@ -12,14 +14,15 @@ export function BottomNav({ activeScreen, onScreenChange }: BottomNavProps) {
     { id: "delivery" as const, label: "Delivery", icon: ShoppingCart },
     { id: "vending" as const, label: "Vending", icon: Coffee },
     { id: "events" as const, label: "Events", icon: Calendar },
-  ]
+    { id: "cart" as const, label: "Cart", icon: ShoppingBag },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border max-w-[430px] mx-auto">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
-          const Icon = item.icon
-          const isActive = activeScreen === item.id
+          const Icon = item.icon;
+          const isActive = activeScreen === item.id;
           return (
             <button
               key={item.id}
@@ -31,9 +34,9 @@ export function BottomNav({ activeScreen, onScreenChange }: BottomNavProps) {
               <Icon className={`w-6 h-6 ${isActive ? "fill-primary" : ""}`} />
               <span className="text-xs font-medium">{item.label}</span>
             </button>
-          )
+          );
         })}
       </div>
     </nav>
-  )
+  );
 }
