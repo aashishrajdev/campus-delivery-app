@@ -47,13 +47,14 @@ export async function updateProductAction(formData: FormData) {
     if (!conn) return { ok: false, error: "DB Error" };
 
     const type = formData.get("type");
-    const storeId = formData.get("storeId");
+    const storeId = formData.get("storeId"); // this is the 'id' string, not _id
     const itemId = formData.get("itemId");
     const price = Number(formData.get("price"));
+    const name = String(formData.get("name"));
 
     if (type === "store") {
       const availability = String(formData.get("availability"));
-
+      // 1. Update the Store Item (price, availability)
       await Store.updateOne(
         { id: storeId, "items._id": itemId },
         {
@@ -63,6 +64,19 @@ export async function updateProductAction(formData: FormData) {
           },
         }
       );
+
+      // 2. Update the Product Name (Global Product)
+      // First find the store to get the productId from the item
+      const store = await Store.findOne({ id: storeId }, { items: 1 });
+      const item = store.items.id(itemId);
+      if (item && item.productId) {
+        // Dynamically import Product to avoid circular dep issues if any, 
+        // though top level import is usually fine.
+        // We need to update the actual Product document
+        const Product = (await import("@/app/models/product.model")).default;
+        await Product.findByIdAndUpdate(item.productId, { name });
+      }
+
     } else {
       const stock = String(formData.get("stock"));
 
@@ -72,6 +86,7 @@ export async function updateProductAction(formData: FormData) {
           $set: {
             "items.$.price": price,
             "items.$.stock": stock,
+            "items.$.name": name, // Vending items have their own name field
           },
         }
       );
