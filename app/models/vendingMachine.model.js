@@ -24,6 +24,15 @@ const vendingMachineSchema = new Schema(
       type: String,
       required: true,
     },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
     items: [vendingItemSchema],
   },
   { timestamps: true }

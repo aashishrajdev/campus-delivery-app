@@ -4,6 +4,82 @@ import { revalidatePath } from "next/cache";
 import dbConnect from "@/app/db";
 import VendingMachine from "@/app/models/vendingMachine.model";
 
+import bcrypt from "bcryptjs";
+
+export async function createVendingMachineAction(formData: FormData) {
+  try {
+    const conn = await dbConnect();
+    if (!conn) return { ok: false, error: "Database not configured." };
+    const id = String(formData.get("id") || "").trim();
+    const names = String(formData.get("names") || "").trim();
+    const location = String(formData.get("location") || "").trim();
+    const hostel = String(formData.get("hostel") || "").trim();
+    const username = String(formData.get("username") || "").trim();
+    const password = String(formData.get("password") || "").trim();
+
+    if (!id || !names || !location || !username || !password)
+      return { ok: false, error: "All fields are required." };
+
+    const existing = await VendingMachine.findOne({
+      $or: [{ id }, { username }],
+    });
+    if (existing) return { ok: false, error: "ID or Username already exists." };
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await VendingMachine.create({
+      id,
+      names,
+      location,
+      hostel,
+      username,
+      password: hashedPassword,
+      image: "/placeholder-logo.png",
+      building: "Main Block", // Default
+      items: [],
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/api/vending-machines");
+    return { ok: true };
+  } catch (err) {
+    console.error("createVendingMachineAction error:", err);
+    return { ok: false, error: "Failed to create machine." };
+  }
+}
+
+export async function updateVendingMachineAction(formData: FormData) {
+  try {
+    const conn = await dbConnect();
+    if (!conn) return { ok: false, error: "Database not configured." };
+    const originalId = String(formData.get("originalId") || "");
+    const id = String(formData.get("id") || "").trim();
+    const names = String(formData.get("names") || "").trim();
+    const location = String(formData.get("location") || "").trim();
+    const hostel = String(formData.get("hostel") || "").trim();
+    const username = String(formData.get("username") || "").trim();
+    const password = String(formData.get("password") || "").trim();
+
+    if (!originalId) return { ok: false, error: "Missing original ID." };
+
+    const updateData: any = { id, names, location, hostel, username };
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    await VendingMachine.findOneAndUpdate({ id: originalId }, updateData, {
+      new: true,
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/api/vending-machines");
+    return { ok: true };
+  } catch (err) {
+    console.error("updateVendingMachineAction error:", err);
+    return { ok: false, error: "Failed to update machine." };
+  }
+}
+
 export async function restockVendingItemAction(formData: FormData) {
   try {
     const conn = await dbConnect();

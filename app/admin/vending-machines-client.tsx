@@ -12,7 +12,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { restockVendingItemAction } from "./vending-actions";
+import {
+  restockVendingItemAction,
+  createVendingMachineAction,
+  updateVendingMachineAction,
+} from "./vending-actions";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface VendingMachinesClientProps {
   machines: any[];
@@ -27,7 +32,13 @@ export function VendingMachinesClient({
   const [selectedMachine, setSelectedMachine] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [quantity, setQuantity] = useState("");
+
   const [pending, setPending] = useState(false);
+
+  // Management State
+  const [manageOpen, setManageOpen] = useState(false);
+  const [editingMachine, setEditingMachine] = useState<any | null>(null);
+  const [managePending, setManagePending] = useState(false);
 
   const currentMachine = machines.find((m) => m._id === selectedMachine);
   const currentProduct = products.find((p) => p._id === selectedProduct);
@@ -73,13 +84,25 @@ export function VendingMachinesClient({
 
   return (
     <>
-      <Button
-        variant="default"
-        onClick={() => setOpen(true)}
-        className="w-full"
-      >
-        Update Vending Stock
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          variant="default"
+          onClick={() => setOpen(true)}
+          className="flex-1"
+        >
+          Restock
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setEditingMachine(null);
+            setManageOpen(true);
+          }}
+          className="flex-1"
+        >
+          Manage Machines
+        </Button>
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -168,6 +191,164 @@ export function VendingMachinesClient({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Machines Dialog */}
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Vending Machines</DialogTitle>
+          </DialogHeader>
+
+          {editingMachine || manageOpen ? (
+            <div className="space-y-4">
+              {!editingMachine && (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto mb-4 border p-2 rounded">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold text-sm">Existing Machines</h3>
+                    <Button
+                      size="sm"
+                      onClick={() => setEditingMachine({ new: true })}
+                    >
+                      Add New
+                    </Button>
+                  </div>
+                  {machines.map((m) => (
+                    <div
+                      key={m._id}
+                      className="flex justify-between items-center bg-secondary/50 p-2 rounded text-sm"
+                    >
+                      <span>
+                        {m.names} ({m.id})
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setEditingMachine(m)}
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(editingMachine || (editingMachine as any)?.new) && (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setManagePending(true);
+                    const fd = new FormData(e.currentTarget);
+
+                    try {
+                      const action = (editingMachine as any).new
+                        ? createVendingMachineAction
+                        : updateVendingMachineAction;
+
+                      const res = await action(fd);
+                      if (res.ok) {
+                        toast.success("Saved successfully");
+                        setEditingMachine(null);
+                        // If we were adding, we might want to stay in list view
+                      } else {
+                        toast.error(res.error || "Failed");
+                      }
+                    } finally {
+                      setManagePending(false);
+                    }
+                  }}
+                  className="space-y-4 border-t pt-4"
+                >
+                  <h3 className="font-semibold">
+                    {(editingMachine as any).new
+                      ? "Add Machine"
+                      : "Edit Machine"}
+                  </h3>
+                  {!(editingMachine as any).new && (
+                    <input
+                      type="hidden"
+                      name="originalId"
+                      value={editingMachine.id}
+                    />
+                  )}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="id">ID</Label>
+                      <Input
+                        id="id"
+                        name="id"
+                        defaultValue={editingMachine.id || ""}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="names">Name</Label>
+                      <Input
+                        id="names"
+                        name="names"
+                        defaultValue={editingMachine.names || ""}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        name="location"
+                        defaultValue={editingMachine.location || ""}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hostel">Hostel</Label>
+                      <Input
+                        id="hostel"
+                        name="hostel"
+                        defaultValue={editingMachine.hostel || ""}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        name="username"
+                        defaultValue={editingMachine.username || ""}
+                        autoComplete="off"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="password">Password</Label>
+                      <PasswordInput
+                        id="password"
+                        name="password"
+                        placeholder={
+                          !(editingMachine as any).new
+                            ? "Leave blank to keep"
+                            : "Required"
+                        }
+                        required={(editingMachine as any).new}
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => setEditingMachine(null)}
+                    >
+                      Back to List
+                    </Button>
+                    <Button type="submit" disabled={managePending}>
+                      {managePending ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </>

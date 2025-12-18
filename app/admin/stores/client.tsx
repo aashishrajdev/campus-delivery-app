@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -83,6 +84,29 @@ function StoreForm({ store, onClose, onSave }: StoreFormProps) {
           placeholder="Best coffee on campus"
           defaultValue={store?.description || ""}
           required
+        />
+      </div>
+      <div>
+        <Label htmlFor="username">Username (for store login)</Label>
+        <Input
+          id="username"
+          name="username"
+          placeholder="e.g. cafeadmin"
+          defaultValue={store?.username || ""}
+          autoComplete="off"
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="password">
+          Password {isEdit ? "(leave blank to keep current)" : ""}
+        </Label>
+        <PasswordInput
+          id="password"
+          name="password"
+          placeholder={isEdit ? "New password" : "Strong password"}
+          autoComplete="new-password"
+          required={!isEdit}
         />
       </div>
       <DialogFooter>

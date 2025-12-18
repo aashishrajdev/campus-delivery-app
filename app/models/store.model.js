@@ -27,6 +27,16 @@ const storeSchema = new Schema(
       default: "",
     },
     items: { type: [storeItemSchema], default: [] },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    items: [storeItemSchema],
   },
   { timestamps: true }
 );

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import dbConnect from "@/app/db";
 import Store from "@/app/models/store.model";
+import bcrypt from "bcryptjs";
 
 export async function createStoreAction(formData: FormData) {
   try {
@@ -11,20 +12,30 @@ export async function createStoreAction(formData: FormData) {
     const id = String(formData.get("id") || "").trim();
     const name = String(formData.get("name") || "").trim();
     const description = String(formData.get("description") || "").trim();
+    const username = String(formData.get("username") || "").trim();
+    const password = String(formData.get("password") || "").trim();
 
-    if (!id || !name || !description)
+    if (!id || !name || !description || !username || !password)
       return { ok: false, error: "All fields are required." };
 
-    const existing = await Store.findOne({ id });
-    if (existing) {
-      return { ok: false, error: `Store with id "${id}" already exists.` };
-    }
+    // Check uniqueness
+    const existing = await Store.findOne({
+      $or: [{ id }, { username }],
+    });
+    if (existing)
+      return { ok: false, error: "Store ID or Username already exists." };
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     await Store.create({
       id,
       name,
       description,
+      username,
+      password: hashedPassword,
       items: [],
+      image: "/placeholder-logo.png", // Default image
+      location: "Active Campus", // Default location
     });
 
     revalidatePath("/admin/stores");
@@ -44,12 +55,19 @@ export async function updateStoreAction(formData: FormData) {
     const id = String(formData.get("id") || "").trim();
     const name = String(formData.get("name") || "").trim();
     const description = String(formData.get("description") || "").trim();
+    const username = String(formData.get("username") || "").trim();
+    const password = String(formData.get("password") || "").trim();
 
     if (!originalId) return { ok: false, error: "Missing original store id." };
 
+    const updateData: any = { id, name, description, username };
+    if (password) {
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
     await Store.findOneAndUpdate(
       { id: originalId }, // usage of custom ID
-      { id, name, description },
+      updateData,
       { new: true }
     );
 
