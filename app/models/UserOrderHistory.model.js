@@ -1,21 +1,21 @@
-import mongoose, {Schema} from 'mongoose';
+import mongoose, { Schema } from "mongoose";
 
-
-const UserOrderHistorySchema = new Schema({
-    userId:{
-        type: Schema.Types.ObjectId,
-        ref:"user",
-        required: true
+const UserOrderHistorySchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
     },
-    orders:[
-        {
-            type: Schema.Types.ObjectId,
-            ref: 'Order',
-        }
-    ]
+    orders: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Order",
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
-
-},{timestamps:true})
-
-
-export default mongoose.model("UserOrderHistorySchema",UserOrderHistorySchema)
+export default mongoose.models.UserOrderHistorySchema ||
+  mongoose.model("UserOrderHistorySchema", UserOrderHistorySchema);

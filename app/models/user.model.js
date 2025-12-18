@@ -1,31 +1,29 @@
 import mongoose, { Schema } from "mongoose";
 
-
-
-const userSchema = new Schema({
-    name:{
-        type: String,
-        required: true,
-    
+const userSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
     },
-    phone:{
-        type: Number,
-        required: true,
-        unique:true
+    phone: {
+      type: Number,
+      required: true,
+      unique: true,
     },
-    email:{
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        lowercase: true
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
     },
-    password:{
-        type: String,
-        required: true, 
-    }
-},{timestamps: true})
+    password: {
+      type: String,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
 
-
-export default mongoose.model("User",userSchema)
-
+export default mongoose.models.User || mongoose.model("User", userSchema);

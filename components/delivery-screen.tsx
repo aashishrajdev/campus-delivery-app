@@ -3,18 +3,19 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Plus, Minus, ShoppingCart, MapPin } from "lucide-react";
-import { deliveryItems, hostels } from "@/lib/data";
+import { hostels } from "@/lib/data";
 
 interface DeliveryScreenProps {
+  deliveryItems: Array<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    availability: "available" | "limited" | "unavailable";
+    emoji: string;
+    image?: string;
+  }>;
   cartItems: Record<string, number>;
   onUpdateQuantity: (itemId: string, change: number) => void;
   onProceedToCart: () => void;
@@ -26,6 +27,7 @@ interface DeliveryScreenProps {
 }
 
 export function DeliveryScreen({
+  deliveryItems,
   cartItems,
   onUpdateQuantity,
   onProceedToCart,
@@ -61,37 +63,18 @@ export function DeliveryScreen({
           </button>
         </div>
 
-        {/* Location Selector */}
+        {/* Location Display */}
         <div className="bg-primary-foreground/10 rounded-xl p-3 space-y-2 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-sm opacity-90">
             <MapPin className="w-4 h-4" />
-            <span>Delivering to</span>
+            <span>Delivery Address</span>
           </div>
-          <div className="flex gap-2">
-            <Select value={selectedHostel} onValueChange={setSelectedHostel}>
-              <SelectTrigger className="flex-1 bg-background text-foreground border-0 shadow-sm">
-                <SelectValue placeholder="Select Hostel" />
-              </SelectTrigger>
-              <SelectContent>
-                {hostels.map((hostel) => (
-                  <SelectItem key={hostel} value={hostel}>
-                    {hostel}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              type="text"
-              placeholder="Room"
-              value={roomNumber}
-              onChange={(e) => setRoomNumber(e.target.value)}
-              className="w-20 bg-background text-foreground border-0 shadow-sm"
-            />
-          </div>
-          {selectedHostel && roomNumber && (
-            <p className="text-xs opacity-90 animate-in fade-in-50 slide-in-from-top-2">
+          {selectedHostel && roomNumber ? (
+            <p className="text-sm font-semibold animate-in fade-in-50 slide-in-from-top-2">
               📍 Room {roomNumber}, {selectedHostel}
             </p>
+          ) : (
+            <p className="text-sm text-white italic">Select address</p>
           )}
         </div>
       </div>
@@ -118,8 +101,16 @@ export function DeliveryScreen({
             style={{ animationDelay: `${index * 50}ms` }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-20 h-20 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl flex items-center justify-center text-4xl shadow-sm">
-                {item.emoji}
+              <div className="w-20 h-20 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl flex items-center justify-center text-4xl shadow-sm overflow-hidden">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span>{item.emoji}</span>
+                )}
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-base">{item.name}</h3>

@@ -1,20 +1,34 @@
-import mongoose, {Schema} from 'mongoose';
+import mongoose, { Schema } from "mongoose";
 
-const vendingItemSchema = new Schema({
-    name:{
-        type: String,
-        required: true
+const vendingItemSchema = new Schema(
+  {
+    productId: {
+      type: Schema.Types.ObjectId,
+      ref: "Product",
+      required: false,
     },
-    price:{
-        type:Number,
-        required: true
+    name: {
+      type: String,
+      required: false,
     },
-    stock:{
-        type: String,
-        enum:["inStock","outOfStock"],
-        default:"inStock",
-        required: true
+    price: {
+      type: Number,
+      required: false,
     },
-},{timestamps: true})
+    quantity: {
+      type: Number,
+      default: 0,
+      required: true,
+    },
+    emoji: {
+      type: String,
+      default: "🛍️",
+    },
+  },
+  { timestamps: true }
+);
 
-export default mongoose.model("vendingItem", vendingItemSchema)
+export { vendingItemSchema };
+
+export default mongoose.models.vendingItem ||
+  mongoose.model("vendingItem", vendingItemSchema);
