@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ export function StoreDashboardClient({
 
 function DetailsForm({ data, type }: { data: any; type: string }) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -68,8 +70,12 @@ function DetailsForm({ data, type }: { data: any; type: string }) {
 
     const res = await updateStoreDetailsAction(fd);
     setLoading(false);
-    if (res.ok) toast.success("Details updated");
-    else toast.error(res.error || "Failed to update");
+    if (res.ok) {
+      toast.success("Details updated");
+      router.refresh();
+    } else {
+      toast.error(res.error || "Failed to update");
+    }
   }
 
   return (
@@ -121,14 +127,22 @@ function DetailsForm({ data, type }: { data: any; type: string }) {
   );
 }
 
+
+
 function ProductsManager({ data, type }: { data: any; type: string }) {
   const [items, setItems] = useState<any[]>(data.items || []);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const router = useRouter();
 
   // In this simplified version, we are editing existing items embedded in the store/vm.
   // Adding new items would require selecting from global Products (future improvement).
+
+  /* Synchronize local state with server data on refresh */
+  useEffect(() => {
+    setItems(data.items || []);
+  }, [data.items]);
 
   const handleEdit = (item: any) => {
     setEditingItem(item);
@@ -143,16 +157,46 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
     fd.append("type", type);
     fd.append("itemId", editingItem._id);
 
+    // Extract values for optimistic update
+    const newName = String(fd.get("name"));
+    const newPrice = Number(fd.get("price"));
+    let newStatus = "";
+
+    if (type === "store") {
+      newStatus = String(fd.get("availability"));
+    } else {
+      newStatus = String(fd.get("stock"));
+    }
+
+    // Optimistic Update
+    const oldItems = [...items];
+    setItems((prev) => prev.map(item => {
+      if (item._id === editingItem._id) {
+        return {
+          ...item,
+          price: newPrice,
+          // Handle complex object vs flat field for name
+          name: newName,
+          // Optimistically update productId.name if it exists too, for display consistency
+          productId: item.productId ? { ...item.productId, name: newName, price: newPrice } : undefined,
+          availability: type === 'store' ? newStatus : item.availability,
+          stock: type !== 'store' ? newStatus : item.stock
+        };
+      }
+      return item;
+    }));
+
+    setIsDialogOpen(false); // Close immediately for snappiness
+
     const res = await updateProductAction(fd);
     setSaving(false);
 
     if (res.ok) {
       toast.success("Item updated");
-      setIsDialogOpen(false);
-      // Optimistic update or router.refresh() happens via server action revalidate
-      // But for immediate feedback let's close dialog
+      router.refresh();
     } else {
       toast.error(res.error || "Failed");
+      setItems(oldItems); // Revert on failure
     }
   };
 
@@ -165,7 +209,6 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Start</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock/Status</TableHead>
@@ -175,11 +218,11 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
           <TableBody>
             {items.map((item) => (
               <TableRow key={item._id}>
-                <TableCell>
+                {/* <TableCell>
                   <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                     {item.emoji || "📦"}
                   </div>
-                </TableCell>
+                </TableCell> */}
                 <TableCell className="font-medium">
                   {/* Access name from populated productId if available or direct name */}
                   {item.productId?.name || item.name}
@@ -189,7 +232,7 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                   <Badge
                     variant={
                       item.availability === "inStock" ||
-                      item.stock === "in-stock"
+                        item.stock === "in-stock"
                         ? "default"
                         : "destructive"
                     }
@@ -221,8 +264,8 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                 <div>
                   <Label>Name</Label>
                   <Input
-                    disabled
-                    value={editingItem.productId?.name || editingItem.name}
+                    name="name"
+                    defaultValue={editingItem.productId?.name || editingItem.name}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
