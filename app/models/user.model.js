@@ -22,6 +22,14 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    address: {
+      type: String,
+      default: "",
+    },
+    orderHistory: {
+      type: [{ type: Schema.Types.ObjectId, ref: "OrderItem" }],
+      default: [],
+    },
   },
   { timestamps: true }
 );
