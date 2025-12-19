@@ -18,13 +18,11 @@ const storeSchema = new Schema(
     },
     location: {
       type: String,
-      required: false,
-      default: "",
+      required: true,
     },
     image: {
       type: String,
-      required: false,
-      default: "",
+      required: true,
     },
     type: {
       type: String,
@@ -42,9 +40,9 @@ const storeSchema = new Schema(
       required: true,
     },
     phoneNumber: {
-      type: String,
-      required: false,
-      default: "",
+      type: Number,
+      required: true,
+      unique: true,
     },
     items: [storeItemSchema],
   },
