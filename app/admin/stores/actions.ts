@@ -15,6 +15,7 @@ export async function createStoreAction(formData: FormData) {
     const type = String(formData.get("type") || "non-veg"); // Default to non-veg matches UI
     const username = String(formData.get("username") || "").trim();
     const password = String(formData.get("password") || "").trim();
+    const phoneNumber = String(formData.get("phoneNumber") || "").trim();
 
     if (!id || !name || !description || !username || !password)
       return { ok: false, error: "All fields are required." };
@@ -38,6 +39,7 @@ export async function createStoreAction(formData: FormData) {
       items: [],
       image: "/placeholder-logo.png", // Default image
       location: "Active Campus", // Default location
+      phoneNumber,
     });
 
     revalidatePath("/admin/stores");
@@ -60,10 +62,11 @@ export async function updateStoreAction(formData: FormData) {
     const type = String(formData.get("type") || "non-veg");
     const username = String(formData.get("username") || "").trim();
     const password = String(formData.get("password") || "").trim();
+    const phoneNumber = String(formData.get("phoneNumber") || "").trim();
 
     if (!originalId) return { ok: false, error: "Missing original store id." };
 
-    const updateData: any = { id, name, description, type, username };
+    const updateData: any = { id, name, description, type, username, phoneNumber };
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }

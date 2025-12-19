@@ -398,6 +398,20 @@ export function ProfileScreen() {
                     </span>
                     <span className="font-bold">₹{order.totalAmount}</span>
                   </div>
+
+                  {/* Display Source Info (Take from first item for now as orders are typically single source) */}
+                  {order.items.length > 0 && (order.items[0] as any).sourceName && (
+                    <div className="mb-2">
+                      <p className="text-sm font-semibold">{(order.items[0] as any).sourceName}</p>
+                      {(order.items[0] as any).sourcePhone && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
+                          {(order.items[0] as any).sourcePhone}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   <p className="text-xs text-muted-foreground truncate">
                     {order.items
                       .map((i) => `${i.quantity}x ${i.name}`)

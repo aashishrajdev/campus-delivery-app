@@ -106,7 +106,98 @@ export async function getUserOrders(userId) {
         // Query the Order collection directly instead of relying on user.orderHistory array.
         // This is more robust and finds "orphaned" orders.
         const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 });
-        return JSON.parse(JSON.stringify(orders));
+        const ordersJson = JSON.parse(JSON.stringify(orders));
+
+        // Enrich orders with source details (Name, Phone)
+        // We can do this efficiently by gathering all unique source IDs first
+        // But for simplicity and acceptable performance with reasonable order history size,
+        // we can just lookup as we map or do a Promise.all
+        // Let's try to be smart about it.
+
+        const sourceIds = new Set();
+        ordersJson.forEach(order => {
+            if (order.items && order.items.length > 0) {
+                // Usually an order is from ONE source, but our schema allows multiple?
+                // Schema has items array, each item has sourceId.
+                // In practice, a cart is usually per-store.
+                // let's grab unique sourceIds from all items in all orders.
+                order.items.forEach(item => {
+                    if (item.sourceId) sourceIds.add(item.sourceId);
+                });
+            }
+        });
+
+        const storeMap = {}; // id -> { name, phone }
+        const vendingMap = {}; // id -> { name, phone }
+
+        // Fetch details for all identified sources
+        // We have to check both Stores and VendingMachines because sourceIds are mixed?
+        // Actually items have sourceModel: 'Store' or 'VendingMachine'.
+        // Let's split IDs by type.
+
+        const storeIds = new Set();
+        const vendingIds = new Set();
+
+        ordersJson.forEach(order => {
+            if (order.items) {
+                order.items.forEach(item => {
+                    if (item.sourceModel === 'Store') storeIds.add(item.sourceId);
+                    else if (item.sourceModel === 'VendingMachine') vendingIds.add(item.sourceId);
+                });
+            }
+        });
+
+        // Loop stores
+        for (const sid of Array.from(storeIds)) {
+            try {
+                // Try finding by custom ID first (as String)
+                let store: any = await Store.findOne({ id: sid }).select('name phoneNumber');
+                if (!store && Types.ObjectId.isValid(sid as string)) {
+                    store = await Store.findById(sid).select('name phoneNumber');
+                }
+                if (store) {
+                    storeMap[sid as string] = { name: store.name, phone: store.phoneNumber };
+                }
+            } catch (e) { console.error(`Failed to fetch store ${sid}`, e); }
+        }
+
+        // Loop vending machines
+        for (const vid of Array.from(vendingIds)) {
+            try {
+                let vm: any = null;
+                if (Types.ObjectId.isValid(vid as string)) {
+                    vm = await VendingMachine.findById(vid).select('name names');
+                }
+                if (!vm) { // Try finding by other custom ID if exists? VendingMachine model usually just uses _id unless specified.
+                    // Let's assume _id for now based on typical usage
+                }
+
+                if (vm) {
+                    const vName = vm.names || vm.name || "Vending Machine";
+                    // Vending machines usually don't have phone numbers for users to call, maybe admin contact?
+                    // We'll leave phone blank for now.
+                    vendingMap[vid as string] = { name: vName, phone: null };
+                }
+            } catch (e) { console.error(`Failed to fetch VM ${vid}`, e); }
+        }
+
+        // Attach to orders
+        const enrichedOrders = ordersJson.map(order => {
+            const enrichedItems = order.items.map(item => {
+                let details = { name: 'Unknown', phone: null };
+                if (item.sourceModel === 'Store') details = storeMap[item.sourceId] || details;
+                else if (item.sourceModel === 'VendingMachine') details = vendingMap[item.sourceId] || details;
+
+                return {
+                    ...item,
+                    sourceName: details.name || item.name, // Fallback to item name if source unknown? No, maybe just "Unknown Store"
+                    sourcePhone: details.phone
+                };
+            });
+            return { ...order, items: enrichedItems };
+        });
+
+        return enrichedOrders;
     } catch (error) {
         console.error("Error fetching user orders:", error);
         return [];
