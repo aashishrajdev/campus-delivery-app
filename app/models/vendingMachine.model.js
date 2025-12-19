@@ -24,6 +24,11 @@ const vendingMachineSchema = new Schema(
       type: String,
       required: true,
     },
+    type: {
+      type: String,
+      enum: ["veg", "non-veg", "both"],
+      default: "both",
+    },
     username: {
       type: String,
       required: true,

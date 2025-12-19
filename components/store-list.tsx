@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Star, MapPin, Clock } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
 
 interface Store {
   _id: string;
@@ -10,7 +11,31 @@ interface Store {
   location: string;
   image: string;
   items: any[];
+  type?: "veg" | "non-veg" | "both";
 }
+
+export const FoodTypeBadge = ({
+  type,
+  className,
+}: {
+  type?: string;
+  className?: string;
+}) => {
+  if (!type) return null;
+  // If type is "both", we treat it as non-veg (red) per user request: "if the store items are non-veg and veg both use nonveg logo"
+
+  const isVeg = type === "veg";
+  const colorClass = isVeg ? "border-green-600" : "border-red-600";
+  const dotClass = isVeg ? "bg-green-600" : "bg-red-600";
+
+  return (
+    <div
+      className={`border ${colorClass} p-[1px] rounded-[4px] w-4 h-4 flex items-center justify-center ${className}`}
+    >
+      <div className={`w-2 h-2 rounded-full ${dotClass}`}></div>
+    </div>
+  );
+};
 
 interface StoreListProps {
   stores: Store[];
@@ -18,6 +43,24 @@ interface StoreListProps {
 }
 
 export function StoreList({ stores, onSelectStore }: StoreListProps) {
+  const [sortBy, setSortBy] = useState<"relevance" | "name">("relevance");
+  const [expandedStoreId, setExpandedStoreId] = useState<string | null>(null);
+
+  const toggleDescription = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setExpandedStoreId(expandedStoreId === id ? null : id);
+  };
+
+  // Sort stores
+  const sortedStores = useMemo(() => {
+    let result = [...stores];
+    if (sortBy === "name") {
+      result.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    // "relevance" is default order
+    return result;
+  }, [stores, sortBy]);
+
   if (stores.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center min-h-[50vh]">
@@ -36,98 +79,91 @@ export function StoreList({ stores, onSelectStore }: StoreListProps) {
     <div className="p-4 space-y-6 pb-24">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold">Top Stores for you</h2>
-        <span className="text-xs text-muted-foreground border p-1 rounded-full px-2">
-          Sort by ▼
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Sort by</span>
+          <select
+            className="text-xs font-medium bg-transparent border-none outline-none cursor-pointer focus:ring-0"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "relevance" | "name")}
+          >
+            <option value="relevance">Relevance</option>
+            <option value="name">Name</option>
+          </select>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {stores.map((store) => (
-          <div
-            key={store._id}
-            className="cursor-pointer group"
-            onClick={() => onSelectStore(store)}
-          >
-            {/* Card Image Section */}
-            <div className="relative h-48 w-full rounded-2xl overflow-hidden shadow-sm mb-3">
-              {store.image ? (
-                <img
-                  src={store.image}
-                  alt={store.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <div className="w-full h-full bg-linear-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                  <span className="text-4xl opacity-50">🍽️</span>
-                </div>
-              )}
+      <div className="space-y-4">
+        {sortedStores.map((store) => {
+          const isExpanded = expandedStoreId === store._id;
 
-              {/* Overlay Gradient */}
-              <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
-
-              {/* Offers Badge */}
-              <div className="absolute bottom-3 left-3 flex flex-col items-start gap-0.5">
-                <span className="text-white font-extrabold text-xl tracking-tight drop-shadow-md">
-                  60% OFF
-                </span>
-                <span className="text-white/90 text-xs font-medium drop-shadow-md">
-                  UPTO ₹120
-                </span>
+          return (
+            <div
+              key={store._id}
+              className="cursor-pointer group flex gap-4 items-start"
+              onClick={() => onSelectStore(store)}
+            >
+              {/* Left: Image (Bigger: 35% of width roughly, or w-36) */}
+              <div className="relative w-36 h-36 shrink-0 rounded-xl overflow-hidden shadow-sm bg-gray-100">
+                {store.image ? (
+                  <img
+                    src={store.image}
+                    alt={store.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-2xl opacity-50">🍽️</span>
+                  </div>
+                )}
               </div>
 
-              {/* Like Button */}
-              <button className="absolute top-3 right-3 p-2 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-colors text-white">
-                <span className="text-lg">🤍</span>
-              </button>
-            </div>
-
-            {/* Content Section */}
-            <div className="px-1">
-              <div className="flex justify-between items-start mb-1">
-                <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                  {store.name}
-                </h3>
-                <div className="flex items-center gap-1 bg-green-700 text-white px-1.5 py-0.5 rounded-[4px] text-xs font-bold text-[10px]">
-                  <span>4.2</span>
-                  <Star className="w-2.5 h-2.5 fill-current" />
+              {/* Right: Content Section */}
+              <div className="flex-1 flex flex-col justify-start min-w-0 pt-0.5 h-36 relative overflow-hidden">
+                {/* Marquee Title Container */}
+                <div className="mb-1 w-full overflow-hidden relative h-7 flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-xl leading-tight text-foreground group-hover:text-primary transition-colors truncate">
+                      {store.name}
+                    </h3>
+                  </div>
+                  <FoodTypeBadge
+                    type={store.type || "both"}
+                    className="shrink-0 mt-0.5"
+                  />
                 </div>
-              </div>
 
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground/80 mb-0.5">
-                <div className="flex items-center gap-1">
-                  <span className="w-4 h-4 rounded-full bg-green-700 flex items-center justify-center p-[2px]">
-                    <div className="w-full h-full rounded-full border border-white" />
+                {/* Description Section with Read More */}
+                <div className="relative flex-1 overflow-hidden">
+                  <div
+                    className={`text-sm text-muted-foreground leading-snug ${
+                      isExpanded
+                        ? "overflow-y-auto max-h-[4.5rem] pr-1"
+                        : "line-clamp-2"
+                    }`}
+                  >
+                    {store.description}
+                  </div>
+                  {/* Read More / Less Toggle */}
+                  {store.description && store.description.length > 60 && (
+                    <button
+                      onClick={(e) => toggleDescription(e, store._id)}
+                      className="text-[10px] font-bold text-primary mt-0.5 hover:underline bg-background/80 px-1 rounded block w-fit"
+                    >
+                      {isExpanded ? "Show Less" : "Read More"}
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-auto flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
+                  <MapPin className="w-3.5 h-3.5 text-primary/70" />
+                  <span className="font-medium bg-secondary/50 px-2 py-0.5 rounded-md text-foreground/80 truncate max-w-[150px]">
+                    {store.location || "On Campus"}
                   </span>
-                  <span>{store.description}</span> {/* Cuisines */}
                 </div>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">₹200 for two</span>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  {/* <MapPin className="w-3 h-3" /> */}
-                  <span>{store.location || "On Campus"}</span>
-                </div>
-                <span className="w-1 h-1 rounded-full bg-border" />
-                <div className="flex items-center gap-1 font-bold text-foreground/60">
-                  {/* <Clock className="w-3 h-3" /> */}
-                  <span>25-30 mins</span>
-                </div>
-              </div>
-
-              {/* Free Delivery Badge */}
-              <div className="mt-3 flex items-center gap-2 border-t pt-2 border-dashed border-border/60">
-                <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
-                  FREE DELIVERY
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Valid on orders above ₹149
-                </span>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

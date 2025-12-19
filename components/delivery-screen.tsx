@@ -35,6 +35,7 @@ interface DeliveryScreenProps {
     emoji?: string;
     icon?: any;
     image?: string;
+    type?: "veg" | "non-veg";
   }>;
   cartItems: Record<string, number>;
   onUpdateQuantity: (itemId: string, change: number) => void;
@@ -446,7 +447,24 @@ export function DeliveryScreen({
                   )}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-base">{item.name}</h3>
+                  <h3 className="font-semibold text-base mb-1 flex items-center gap-2">
+                    {item.name}
+                    {item.type && (
+                      <div
+                        className={`border ${
+                          item.type === "veg"
+                            ? "border-green-600"
+                            : "border-red-600"
+                        } w-3 h-3 flex items-center justify-center p-[1px]`}
+                      >
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            item.type === "veg" ? "bg-green-600" : "bg-red-600"
+                          }`}
+                        ></div>
+                      </div>
+                    )}
+                  </h3>
                   <p className="text-xs text-muted-foreground mb-2">
                     {item.description}
                   </p>

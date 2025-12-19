@@ -60,6 +60,7 @@ export default function StoreDetailsPage({
         (item.availability || item.productId.availability) === "outOfStock"
           ? "unavailable"
           : "available",
+      type: item.productId.type || "veg",
       icon: ShoppingCart,
       image: item.productId.image,
     }));

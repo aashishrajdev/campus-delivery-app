@@ -26,6 +26,11 @@ const storeSchema = new Schema(
       required: false,
       default: "",
     },
+    type: {
+      type: String,
+      enum: ["veg", "non-veg"],
+      default: "veg",
+    },
     items: { type: [storeItemSchema], default: [] },
     username: {
       type: String,

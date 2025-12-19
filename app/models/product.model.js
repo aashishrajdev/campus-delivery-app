@@ -12,11 +12,16 @@ const productSchema = new Schema(
       required: true,
     },
     image: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ["veg", "non-veg"],
+      default: "veg",
+    },
     store: {
       type: Schema.Types.ObjectId,
-      ref: 'store',
-      required: true
-    }
+      ref: "store",
+      required: false,
+    },
   },
   { timestamps: true }
 );

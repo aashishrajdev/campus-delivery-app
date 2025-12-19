@@ -144,6 +144,18 @@ function ProductForm({
             <option value="outOfStock">Out of Stock</option>
           </select>
         </div>
+        <div>
+          <Label htmlFor="type">Type</Label>
+          <select
+            id="type"
+            name="type"
+            defaultValue={product?.type || "veg"}
+            className="h-9 rounded-md border px-3 w-full"
+          >
+            <option value="veg">Veg</option>
+            <option value="non-veg">Non-Veg</option>
+          </select>
+        </div>
       </div>
       <div>
         <Label htmlFor="image">Image URL</Label>

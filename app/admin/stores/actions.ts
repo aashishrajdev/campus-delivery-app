@@ -12,6 +12,7 @@ export async function createStoreAction(formData: FormData) {
     const id = String(formData.get("id") || "").trim();
     const name = String(formData.get("name") || "").trim();
     const description = String(formData.get("description") || "").trim();
+    const type = String(formData.get("type") || "non-veg"); // Default to non-veg matches UI
     const username = String(formData.get("username") || "").trim();
     const password = String(formData.get("password") || "").trim();
 
@@ -31,6 +32,7 @@ export async function createStoreAction(formData: FormData) {
       id,
       name,
       description,
+      type, // Pass type
       username,
       password: hashedPassword,
       items: [],
@@ -55,12 +57,13 @@ export async function updateStoreAction(formData: FormData) {
     const id = String(formData.get("id") || "").trim();
     const name = String(formData.get("name") || "").trim();
     const description = String(formData.get("description") || "").trim();
+    const type = String(formData.get("type") || "non-veg");
     const username = String(formData.get("username") || "").trim();
     const password = String(formData.get("password") || "").trim();
 
     if (!originalId) return { ok: false, error: "Missing original store id." };
 
-    const updateData: any = { id, name, description, username };
+    const updateData: any = { id, name, description, type, username };
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }

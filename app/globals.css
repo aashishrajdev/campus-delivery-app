@@ -159,9 +159,41 @@ a,
 .text-inner-shadow {
   background-color: #0076ca;
   color: transparent;
-  text-shadow: 2px 2px 3px rgba(255, 255, 255, 0.5);
+  text-shadow: 2px 2px 3px rgba(75, 75, 75, 0.5);
   -webkit-background-clip: text;
   -moz-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes scroll-text {
+  0%,
+  15% {
+    transform: translateX(0%);
+  }
+  50%,
+  65% {
+    transform: translateX(calc(-100% + 150px));
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: scroll-text 8s ease-in-out infinite;
 }

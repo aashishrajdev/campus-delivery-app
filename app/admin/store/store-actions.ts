@@ -17,18 +17,20 @@ export async function updateStoreDetailsAction(formData: FormData) {
     const name = String(formData.get("name") || "");
     const location = String(formData.get("location") || "");
     const image = String(formData.get("image") || "");
+    const storeType = String(formData.get("storeType") || "both");
 
     if (type === "store") {
       const description = String(formData.get("description") || "");
       await Store.findOneAndUpdate(
         { id },
-        { name, description, location, image }
+        { name, description, location, image, type: storeType }
       );
     } else {
       // Vending Machine
+      const hostel = String(formData.get("hostel") || "");
       await VendingMachine.findOneAndUpdate(
         { id },
-        { names: name, location, image }
+        { names: name, location, image, type: storeType, hostel }
       );
     }
 
@@ -51,6 +53,8 @@ export async function updateProductAction(formData: FormData) {
     const itemId = formData.get("itemId");
     const price = Number(formData.get("price"));
     const name = String(formData.get("name"));
+    const description = String(formData.get("description"));
+    const image = String(formData.get("image"));
 
     if (type === "store") {
       const availability = String(formData.get("availability"));
@@ -65,7 +69,7 @@ export async function updateProductAction(formData: FormData) {
         }
       );
 
-      // 2. Update the Product Name (Global Product)
+      // 2. Update the Product Name/Desc/Image (Global Product)
       // First find the store to get the productId from the item
       const store = await Store.findOne({ id: storeId }, { items: 1 });
       const item = store.items.id(itemId);
@@ -73,8 +77,15 @@ export async function updateProductAction(formData: FormData) {
         // Dynamically import Product to avoid circular dep issues if any,
         // though top level import is usually fine.
         // We need to update the actual Product document
+        const productType = String(formData.get("productType") || "veg");
+
         const Product = (await import("@/app/models/product.model")).default;
-        await Product.findByIdAndUpdate(item.productId, { name });
+        await Product.findByIdAndUpdate(item.productId, {
+          name,
+          Description: description,
+          image,
+          type: productType,
+        });
       }
     } else {
       const stock = String(formData.get("stock"));
@@ -111,6 +122,7 @@ export async function createStoreProductAction(formData: FormData) {
     const price = Number(formData.get("price"));
     const description = String(formData.get("description") || "");
     const image = String(formData.get("image") || "");
+    const productType = String(formData.get("productType") || "veg");
 
     // 1. Create Global Product
     // Dynamically import Product to avoid circular dep issues
@@ -138,6 +150,7 @@ export async function createStoreProductAction(formData: FormData) {
       Description: description,
       price: price,
       image,
+      type: productType,
       availability: "inStock", // Default
       store: storeObj._id, // Assign the ObjectId of the store
     });

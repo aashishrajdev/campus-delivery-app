@@ -14,6 +14,7 @@ export async function createProductAction(formData: FormData) {
     const Description = String(formData.get("Description") || "").trim();
     const price = Number(formData.get("price") || 0);
     const availability = String(formData.get("availability") || "inStock");
+    const type = String(formData.get("type") || "veg");
     const image = String(formData.get("image") || "").trim();
     const vendingMachines = String(formData.get("vendingMachines") || "")
       .split(",")
@@ -30,6 +31,7 @@ export async function createProductAction(formData: FormData) {
       Description,
       price,
       availability,
+      type,
       image,
     });
 
@@ -98,6 +100,7 @@ export async function updateProductAction(formData: FormData) {
     const Description = String(formData.get("Description") || "").trim();
     const price = Number(formData.get("price") || 0);
     const availability = String(formData.get("availability") || "inStock");
+    const type = String(formData.get("type") || "veg");
     const image = String(formData.get("image") || "").trim();
     const vendingMachines = String(formData.get("vendingMachines") || "")
       .split(",")
@@ -109,7 +112,7 @@ export async function updateProductAction(formData: FormData) {
     if (!id) return { ok: false, error: "Missing product id." };
     await Product.findByIdAndUpdate(
       id,
-      { name, Description, price, availability, image },
+      { name, Description, price, availability, type, image },
       { new: true }
     );
 

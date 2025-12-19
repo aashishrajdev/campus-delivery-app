@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, MapPin, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { FoodTypeBadge } from "@/components/store-list";
 
 export default function VendingMachineDetails({
   params,
@@ -15,52 +16,49 @@ export default function VendingMachineDetails({
   const { id } = use(params);
   const router = useRouter();
 
-  const [products, setProducts] = useState<any[]>([]);
+  const [machine, setMachine] = useState<any>(null);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordering, setOrdering] = useState(false);
 
-  // Re-define locations to find name
-  const vendingLocations = [
-    {
-      id: "machine_1",
-      name: "Main Lobby Vender",
-      hostel: "Block A",
-      location: "Ground Floor",
-    },
-    {
-      id: "machine_2",
-      name: "Canteen Vender",
-      hostel: "Block B",
-      location: "Canteen Area",
-    },
-    {
-      id: "machine_3",
-      name: "Library Vender",
-      hostel: "Central",
-      location: "Library Entrance",
-    },
-  ];
-
-  const selectedLocation = vendingLocations.find((m) => m.id === id);
-
   useEffect(() => {
-    const fetchProducts = async () => {
+    const loadMachine = async () => {
       try {
         setLoading(true);
-        const res = await fetch("/api/products");
-        if (res.ok) {
-          const data = await res.json();
-          setProducts(data);
+        // Dynamically import the action to avoid build/serialization issues if any
+        const { getVendingMachineById } = await import("../actions");
+        const data = await getVendingMachineById(id);
+
+        if (data) {
+          setMachine(data);
+          // Transform items to match the structure expected by UI
+          // The schema has items: [{ productId: Product, ... }]
+          // We want to flatten this for easier display
+          const productsList = data.items
+            .filter((item: any) => item.productId) // Ensure product exists
+            .map((item: any) => ({
+              ...item.productId,
+              // Check availability from BOTH item overrides AND product
+              availability:
+                item.stock === "out-of-stock"
+                  ? "outOfStock"
+                  : item.productId.availability || "inStock",
+              // Use store/vending specific price if set, else product default
+              price: item.price || item.productId.price,
+            }));
+          setItems(productsList);
+        } else {
+          toast.error("Machine not found");
         }
       } catch (err) {
-        console.error("Failed to fetch products:", err);
-        toast.error("Failed to load products");
+        console.error("Failed to load machine:", err);
+        toast.error("Failed to load machine details");
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
-  }, []);
+    loadMachine();
+  }, [id]);
 
   const getAvailabilityStatus = (availability: string) => {
     if (availability === "outOfStock")
@@ -82,7 +80,7 @@ export default function VendingMachineDetails({
     }
   };
 
-  if (!selectedLocation) {
+  if (!loading && !machine) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
         <p>Machine not found</p>
@@ -109,9 +107,11 @@ export default function VendingMachineDetails({
                 🏪
               </div>
               <div>
-                <h2 className="text-lg font-bold">{selectedLocation?.name}</h2>
-                <p className="text-sm text-muted-foreground">
-                  📍 {selectedLocation?.location}, {selectedLocation?.hostel}
+                <h2 className="text-lg font-bold">
+                  {machine?.names || "Loading..."}
+                </h2>
+                <p className="text-sm text-muted-foreground mr-1">
+                  📍 {machine?.location}, {machine?.building}
                 </p>
               </div>
             </div>
@@ -121,12 +121,12 @@ export default function VendingMachineDetails({
           <div className="space-y-3">
             {loading ? (
               <p>Loading products...</p>
-            ) : products.length === 0 ? (
+            ) : items.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No products available
               </p>
             ) : (
-              products.map((product: any, index: number) => {
+              items.map((product: any, index: number) => {
                 const { status, label } = getAvailabilityStatus(
                   product.availability
                 );
@@ -149,9 +149,12 @@ export default function VendingMachineDetails({
                         )}
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-base">
-                          {product.name}
-                        </h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-base">
+                            {product.name}
+                          </h3>
+                          <FoodTypeBadge type={product.type || "veg"} />
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {product.Description}
                         </p>
