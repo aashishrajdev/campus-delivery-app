@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     address: user.address,
     roomNumber: user.roomNumber,
     profileImage: user.profileImage,
+    _id: user._id,
   });
 }
 

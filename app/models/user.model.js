@@ -35,7 +35,7 @@ const userSchema = new Schema(
       default: "",
     },
     orderHistory: {
-      type: [{ type: Schema.Types.ObjectId, ref: "OrderItem" }],
+      type: [{ type: Schema.Types.ObjectId, ref: "Order" }],
       default: [],
     },
   },

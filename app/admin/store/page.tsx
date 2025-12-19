@@ -8,6 +8,7 @@ import { StoreDashboardClient } from "./client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { logoutAction } from "./actions";
+import { getStoreOrders } from "@/app/actions/order-actions";
 
 async function getOwnerAuth() {
   const cookieStore = await cookies();
@@ -28,18 +29,26 @@ export default async function StoreDashboardPage() {
   if (!conn) return <div>Database error</div>;
 
   let data = null;
+  // Fetch store or vending machine
   if (auth.type === "store") {
-    const store = await Store.findById(auth.dbId)
-      .populate("items.productId")
-      .lean();
+    // Check if dbId is ObjectId or custom id. 
+    // Auth cookie probably stores _id or custom id. 
+    // Usually it stores _id. Let's assume _id.
+    let store = await Store.findById(auth.dbId).populate("items.productId").lean();
+    if (!store) {
+      // Fallback to custom id if stored in cookie
+      store = await Store.findOne({ id: auth.dbId }).populate("items.productId").lean();
+    }
     if (store) data = JSON.parse(JSON.stringify(store));
   } else {
-    const vm = await VendingMachine.findById(auth.dbId)
-      .populate("items.productId")
-      .lean();
+    let vm = await VendingMachine.findById(auth.dbId).populate("items.productId").lean();
+    if (!vm) {
+      vm = await VendingMachine.findOne({ id: auth.dbId }).populate("items.productId").lean();
+    }
     if (vm) data = JSON.parse(JSON.stringify(vm));
   }
 
+  // If still no data
   if (!data) {
     return (
       <div className="p-8">
@@ -54,6 +63,11 @@ export default async function StoreDashboardPage() {
       </div>
     );
   }
+
+  // Fetch Orders
+  // Use data.id (custom ID) or data._id (MongoDB ID) depending on what getStoreOrders expects.
+  // Our getStoreOrders handles both now.
+  const orders = await getStoreOrders(data.id || data._id);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -77,7 +91,7 @@ export default async function StoreDashboardPage() {
       </header>
 
       <main className="max-w-5xl mx-auto p-6">
-        <StoreDashboardClient data={data} type={auth.type} />
+        <StoreDashboardClient data={data} type={auth.type} initialOrders={orders} />
       </main>
     </div>
   );

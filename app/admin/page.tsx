@@ -14,6 +14,8 @@ import Product from "@/app/models/product.model";
 import VendingMachine from "@/app/models/vendingMachine.model";
 import Event from "@/app/models/events.model";
 import { AutoRefresh } from "@/components/auto-refresh";
+import { getAdminStats } from "@/app/actions/order-actions";
+import { AdminOrderStats } from "@/components/admin-order-stats";
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -24,37 +26,36 @@ export default async function AdminDashboard() {
   const isAuthed = await getAuth();
   if (!isAuthed) redirect("/admin/login");
 
+  let orderStats = { storeStats: [], vendingStats: [] };
+
   try {
     const conn = await dbConnect();
+    // ... products count etc
+
+    // Fetch Order Stats
+    try {
+      orderStats = await getAdminStats();
+    } catch (e) {
+      console.error("Failed to fetch order stats", e);
+    }
+
+    // ... existing counts logic
     const dbProductsCount = conn ? await Product.countDocuments() : 0;
     const dbEventsCount = conn ? await Event.countDocuments() : 0;
-    const vendingMachinesData = conn
-      ? await VendingMachine.find({})
-          .populate({
-            path: "items",
-            populate: {
-              path: "productId",
-            },
-          })
-          .lean()
-      : [];
-    const productsData = conn ? await Product.find({}).lean() : [];
+    // ...
+    const vendingMachinesData = conn ? await VendingMachine.find({}).lean() : [];
 
-    // Convert MongoDB objects to plain JS objects
-    const plainVendingMachines = JSON.parse(
-      JSON.stringify(vendingMachinesData)
-    );
-    const plainProducts = JSON.parse(JSON.stringify(productsData));
+    // ...
 
     const stats = {
       deliveryItems: deliveryItems.length,
       events: dbEventsCount,
-      vending: plainVendingMachines.length || vendingMachines.length,
+      vending: vendingMachinesData.length || vendingMachines.length,
       dbProducts: dbProductsCount,
     };
 
     return (
-      <div className="min-h-screen px-4 py-6 space-y-6 max-w-2xl mx-auto">
+      <div className="min-h-screen px-4 py-6 space-y-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
           <form action={logoutAction}>
@@ -63,6 +64,7 @@ export default async function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* ... Keep Data Stats Cards ... */}
           <Card>
             <CardHeader>
               <CardTitle>Delivery Items</CardTitle>
@@ -92,15 +94,17 @@ export default async function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Order Stats Section */}
+        <AdminOrderStats stats={orderStats} />
+
+        {/* Quick Commands */}
         <Card>
+          {/* ... Keep Quick Commands ... */}
           <CardHeader>
             <CardTitle>Quick Commands</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              These are basic actions aligned with the app. You can extend them
-              to use the database models in <code>app/models</code>.
-            </p>
+            {/* ... */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Button variant="default" asChild className="rounded-lg">
                 <Link href="/admin/products">Manage products</Link>

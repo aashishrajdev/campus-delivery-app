@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import Link from "next/link";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -183,30 +184,37 @@ export function StoresListClient({ stores }: { stores: any[] }) {
                   ID: {store.id} · Items: {store.items?.length || 0}
                 </p>
               </div>
-              <div className="flex gap-2 ml-2">
+              <Link href={`/admin/stores/${store._id}`}>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => {
-                    setEditingStore(store);
-                    setOpen(true);
-                  }}
                 >
-                  Edit
+                  Orders
                 </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => handleDelete(store.id)}
-                  disabled={deletePending}
-                >
-                  Delete
-                </Button>
-              </div>
+              </Link>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditingStore(store);
+                  setOpen(true);
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleDelete(store.id)}
+                disabled={deletePending}
+              >
+                Delete
+              </Button>
             </div>
-          ))
+            </div>
+      ))
         )}
-      </div>
+    </div >
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -233,14 +241,16 @@ export function StoresListClient({ stores }: { stores: any[] }) {
         </DialogContent>
       </Dialog>
 
-      {saving && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg shadow-lg flex flex-col items-center gap-3">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-sm font-medium">Saving store...</p>
-          </div>
+  {
+    saving && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-background p-6 rounded-lg shadow-lg flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium">Saving store...</p>
         </div>
-      )}
+      </div>
+    )
+  }
     </>
   );
 }

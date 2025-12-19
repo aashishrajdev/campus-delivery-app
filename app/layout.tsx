@@ -6,6 +6,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Alkatra } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
+import { CartProvider } from "./context/CartContext";
 import "./globals.css";
 
 const _geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
@@ -55,9 +56,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased ${alkatra.variable}`}>
-        {children}
-        <Toaster />
-        <Analytics />
+        <CartProvider>
+          {children}
+          <Toaster />
+          <Analytics />
+        </CartProvider>
       </body>
     </html>
   );

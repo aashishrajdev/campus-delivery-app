@@ -8,10 +8,25 @@ import {
   useMemo,
   ReactNode,
 } from "react";
+import { toast } from "sonner";
+
+export interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  source: "STORE" | "VENDING";
+  sourceId: string;
+  sourceModel: "Store" | "VendingMachine";
+  image?: string;
+}
 
 interface CartContextType {
-  cartItems: Record<string, number>;
-  updateQuantity: (itemId: string, change: number) => void;
+  cartItems: CartItem[];
+  addToCart: (item: CartItem) => void;
+  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, delta: number) => void;
+  clearCart: () => void;
   totals: { totalItems: number; totalPrice: number };
   selectedHostel: string;
   roomNumber: string;
@@ -23,23 +38,22 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cartItems, setCartItems] = useState<Record<string, number>>({});
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedHostel, setSelectedHostel] = useState("");
   const [roomNumber, setRoomNumber] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-
-  // Store items price map for calculation - in a real app this might need to be fetched or passed better
-  // For now, we calculate totals based on valid items if we can, or just count items.
-  // The original code calculated totals based on 'activeStore' or 'stores' list.
-  // We'll need a way to look up prices globally or just store prices in cart too.
-  // Storing just IDs is efficient but requires price lookup.
-  // Let's store a price map or rely on components to calculate line items, but context needs total.
-  // Actually, let's fetch stores here or allow components to register items?
-  // Simplest: The original code fetched stores in the page. We should probably fetch them here to know prices for the global cart.
-  const [allProducts, setAllProducts] = useState<Record<string, number>>({});
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Restore cart from local storage if we wanted persistence, but for now just fresh session.
+    setIsClient(true);
+    // Restore cart
+    const savedCart = localStorage.getItem("cart");
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (e) { console.error(e); }
+    }
+
     // Fetch profile for address
     const fetchProfile = async () => {
       const token = localStorage.getItem("token");
@@ -64,56 +78,73 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Also fetch all products to build a price map for the cart logic
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch("/api/products");
-        if (res.ok) {
-          const data = await res.json();
-          const map: Record<string, number> = {};
-          data.forEach((p: any) => {
-            map[p._id] = p.price;
-          });
-          setAllProducts(map);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-
     fetchProfile();
-    fetchProducts();
   }, []);
 
-  const updateQuantity = (itemId: string, change: number) => {
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem("cart", JSON.stringify(cartItems));
+    }
+  }, [cartItems, isClient]);
+
+  const addToCart = (item: CartItem) => {
     setCartItems((prev) => {
-      const current = prev[itemId] || 0;
-      const nextQty = Math.max(0, current + change);
-      if (nextQty === 0) {
-        const { [itemId]: _removed, ...rest } = prev;
-        return rest;
+      const existingIndex = prev.findIndex(
+        (i) => i.productId === item.productId && i.sourceId === item.sourceId
+      );
+
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex].quantity += item.quantity;
+        toast.success("Updated quantity in cart");
+        return updated;
       }
-      return { ...prev, [itemId]: nextQty };
+
+      toast.success("Added to cart");
+      return [...prev, item];
     });
   };
 
+  const updateQuantity = (productId: string, delta: number) => {
+    setCartItems((prev) => {
+      return prev.map(item => {
+        if (item.productId === productId) {
+          const newQty = Math.max(0, item.quantity + delta);
+          // If 0, it will be filtered out below? No, map keeps length.
+          // We should filter after or handle 0 removal in removeFromCart?
+          // existing logic in simple cart usually removes on 0.
+          // But let's keep it simple: min 0. If 0, UI might show "Add".
+          // Actually better to remove if 0.
+          return { ...item, quantity: newQty };
+        }
+        return item;
+      }).filter(item => item.quantity > 0);
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCartItems((prev) => prev.filter((i) => i.productId !== productId));
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem("cart");
+  };
+
   const totals = useMemo(() => {
-    const totalItems = Object.values(cartItems).reduce(
-      (sum, qty) => sum + qty,
-      0
-    );
-    const totalPrice = Object.entries(cartItems).reduce((sum, [id, qty]) => {
-      const price = allProducts[id] || 0;
-      return sum + qty * price;
-    }, 0);
+    const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = cartItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
     return { totalItems, totalPrice };
-  }, [cartItems, allProducts]);
+  }, [cartItems]);
 
   return (
     <CartContext.Provider
       value={{
         cartItems,
+        addToCart,
+        removeFromCart,
         updateQuantity,
+        clearCart,
         totals,
         selectedHostel,
         roomNumber,

@@ -59,15 +59,39 @@ export default async function StoresAdminPage() {
             <StoresListClient stores={serialized} />
           </CardContent>
         </Card>
-        <AutoRefresh />
-      </div>
+
+        {/* Display Orders for the first store for demo, or loop? 
+           The user wants "respective store admin page". 
+           Wait, there isn't a route for individual store admin in this file structure yet, 
+           only a list of stores. 
+           I should check if `app/admin/stores/[id]` exists. 
+           If not, I should probably add orders inside `StoresListClient` (expanded view) 
+           or simpler: just show ALL store orders for now or link to details.
+           Checking directory list... `app/admin/stores` (2 children).
+           Let's check if there is an [id] folder.
+           
+           If not, I'll create a new page for single store admin details.
+        */}
+      </CardContent>
+        </Card >
+      </div >
     );
   } catch (err) {
-    console.error("StoresAdminPage error:", err);
-    return (
-      <div className="min-h-screen p-4">
-        <p className="text-red-600">Failed to load stores.</p>
-      </div>
-    );
+    // ...
   }
+}
+
+// I will create `app/admin/stores/[id]/page.tsx` for specific store admin view. 
+// That seems cleaner than jamming it into the list.
+<AutoRefresh />
+      </div >
+    );
+  } catch (err) {
+  console.error("StoresAdminPage error:", err);
+  return (
+    <div className="min-h-screen p-4">
+      <p className="text-red-600">Failed to load stores.</p>
+    </div>
+  );
+}
 }
