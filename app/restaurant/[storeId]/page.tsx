@@ -51,19 +51,21 @@ export default function StoreDetailsPage({
 
   const deliveryItems = useMemo(() => {
     if (!store) return [];
-    return store.items.map((item: any) => ({
-      id: item.productId._id,
-      name: item.productId.name,
-      description: item.productId.Description,
-      price: item.price || item.productId.price,
-      availability:
-        (item.availability || item.productId.availability) === "outOfStock"
-          ? "unavailable"
-          : "available",
-      type: item.productId.type || "veg",
-      icon: ShoppingCart,
-      image: item.productId.image,
-    }));
+    return store.items
+      .filter((item: any) => item.productId)
+      .map((item: any) => ({
+        id: item.productId._id,
+        name: item.productId.name,
+        description: item.productId.Description,
+        price: item.price || item.productId.price,
+        availability:
+          (item.availability || item.productId.availability) === "outOfStock"
+            ? "unavailable"
+            : "available",
+        type: item.productId.type || "veg",
+        icon: ShoppingCart,
+        image: item.productId.image,
+      }));
   }, [store]);
 
   if (loading) {

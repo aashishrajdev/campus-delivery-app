@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 import { hostels, categories } from "@/lib/data";
 import { useCart } from "@/components/cart-context";
 import { useRouter } from "next/navigation";
-import { getStoresAction, getVendingMachinesAction } from "./actions";
+import { getStoresAction } from "./actions";
 
 interface RestaurantClientProps {
   initialStores: any[];
@@ -48,7 +48,7 @@ export default function RestaurantClient({
   const [isAddressDialogOpen, setIsAddressDialogOpen] = useState(false);
   const [tempHostel, setTempHostel] = useState("");
   const [tempRoom, setTempRoom] = useState("");
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const handleSaveAddress = async () => {
     setSelectedHostel(tempHostel);
@@ -96,22 +96,10 @@ export default function RestaurantClient({
   useEffect(() => {
     const fetchContent = async () => {
       try {
-        const [storesData, vendingData] = await Promise.all([
-          getStoresAction(Date.now()),
-          getVendingMachinesAction(Date.now()),
-        ]);
+        const storesData = await getStoresAction(Date.now());
 
         const formattedStores = [
           ...storesData.map((s: any) => ({ ...s, isVending: false })),
-          ...vendingData.map((v: any) => ({
-            ...v,
-            name: v.names, // Map names to name
-            description: `Vending Machine at ${v.location}, ${
-              v.building || ""
-            }`,
-            type: "veg", // Vending mostly veg? or derive from items?
-            isVending: true,
-          })),
         ];
 
         setStores(formattedStores);
@@ -291,9 +279,11 @@ export default function RestaurantClient({
         />
       </div>
       {/* Debug/Live Indicator */}
-      <div className="text-center py-2 text-[10px] text-muted-foreground opacity-50">
-        Live updates active • Last updated: {lastUpdated.toLocaleTimeString()}
-      </div>
+      {lastUpdated && (
+        <div className="text-center py-2 text-[10px] text-muted-foreground opacity-50">
+          Live updates active • Last updated: {lastUpdated.toLocaleTimeString()}
+        </div>
+      )}
     </div>
   );
 }
