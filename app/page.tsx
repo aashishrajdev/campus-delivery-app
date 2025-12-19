@@ -35,7 +35,7 @@ export default function LandingPage() {
 
       <div className="flex-1 flex items-center justify-center">
         <p className="text-[#1591EA] text-xl font-medium opacity-80">
-          Any Slogan
+          put your slogn here
         </p>
       </div>
 
