@@ -1,4 +1,7 @@
 import type React from "react";
+
+export const dynamic = "force-dynamic";
+
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
@@ -50,7 +53,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans antialiased`}>
+      <body className="font-sans antialiased ">
         {children}
         <Toaster />
         <Analytics />

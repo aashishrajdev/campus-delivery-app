@@ -33,6 +33,7 @@ interface CartScreenProps {
   setSelectedHostel: (hostel: string) => void;
   roomNumber: string;
   setRoomNumber: (room: string) => void;
+  onSaveAddress?: (hostel: string, room: string) => Promise<void> | void;
 }
 
 export function CartScreen({
@@ -44,6 +45,7 @@ export function CartScreen({
   setSelectedHostel,
   roomNumber,
   setRoomNumber,
+  onSaveAddress,
 }: CartScreenProps) {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [tempHostel, setTempHostel] = useState(selectedHostel);
@@ -58,6 +60,7 @@ export function CartScreen({
       setSelectedHostel(tempHostel);
       setRoomNumber(tempRoom);
       setIsEditingAddress(false);
+      onSaveAddress?.(tempHostel, tempRoom);
     }
   };
 

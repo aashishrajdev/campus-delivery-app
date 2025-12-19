@@ -70,13 +70,12 @@ export async function updateProductAction(formData: FormData) {
       const store = await Store.findOne({ id: storeId }, { items: 1 });
       const item = store.items.id(itemId);
       if (item && item.productId) {
-        // Dynamically import Product to avoid circular dep issues if any, 
+        // Dynamically import Product to avoid circular dep issues if any,
         // though top level import is usually fine.
         // We need to update the actual Product document
         const Product = (await import("@/app/models/product.model")).default;
         await Product.findByIdAndUpdate(item.productId, { name });
       }
-
     } else {
       const stock = String(formData.get("stock"));
 
@@ -98,5 +97,115 @@ export async function updateProductAction(formData: FormData) {
   } catch (err) {
     console.error("update product error", err);
     return { ok: false, error: "Failed to update item" };
+  }
+}
+
+export async function createStoreProductAction(formData: FormData) {
+  try {
+    const conn = await dbConnect();
+    if (!conn) return { ok: false, error: "DB Error" };
+
+    const type = formData.get("type");
+    const storeId = formData.get("storeId"); // string 'id'
+    const name = String(formData.get("name"));
+    const price = Number(formData.get("price"));
+    const description = String(formData.get("description") || "");
+    const image = String(formData.get("image") || "");
+
+    // 1. Create Global Product
+    // Dynamically import Product to avoid circular dep issues
+    const Product = (await import("@/app/models/product.model")).default;
+
+    // We need the actual _id of the store/vm to satisfy the Product schema 'store' field requirement
+    let storeObj;
+    if (type === "store") {
+      storeObj = await Store.findOne({ id: storeId });
+    } else {
+      storeObj = await VendingMachine.findOne({ id: storeId });
+    }
+
+    if (!storeObj) {
+      return { ok: false, error: "Store not found" };
+    }
+
+    // Check if product with same name exists?
+    // Ideally we might want to reuse, but for this simple app, let's create new or simple check.
+    // Let's create a new one to allow custom descriptions/images per store conceptually,
+    // even though Product is shared.
+
+    const newProduct = await Product.create({
+      name,
+      Description: description,
+      price: price,
+      image,
+      availability: "inStock", // Default
+      store: storeObj._id, // Assign the ObjectId of the store
+    });
+
+    const newItem = {
+      productId: newProduct._id,
+      price: price, // Store specific price
+    };
+
+    if (type === "store") {
+      const availability = String(formData.get("availability") || "inStock");
+      // @ts-ignore
+      newItem.availability = availability;
+      // @ts-ignore
+      newItem.name = name; // redundancy for quick access if needed, but productId is main
+
+      await Store.findOneAndUpdate(
+        { id: storeId },
+        { $push: { items: newItem } }
+      );
+    } else {
+      const stock = String(formData.get("stock") || "in-stock");
+      // @ts-ignore
+      newItem.stock = stock;
+      // @ts-ignore
+      newItem.name = name; // Vending items explicitly use name
+
+      await VendingMachine.findOneAndUpdate(
+        { id: storeId },
+        { $push: { items: newItem } }
+      );
+    }
+
+    revalidatePath("/admin/store");
+    revalidatePath("/api/stores");
+    return { ok: true };
+  } catch (err) {
+    console.error("create product error", err);
+    return { ok: false, error: "Failed to create product" };
+  }
+}
+
+export async function deleteStoreProductAction(formData: FormData) {
+  try {
+    const conn = await dbConnect();
+    if (!conn) return { ok: false, error: "DB Error" };
+
+    const type = formData.get("type");
+    const storeId = formData.get("storeId");
+    const itemId = formData.get("itemId");
+
+    if (type === "store") {
+      await Store.findOneAndUpdate(
+        { id: storeId },
+        { $pull: { items: { _id: itemId } } }
+      );
+    } else {
+      await VendingMachine.findOneAndUpdate(
+        { id: storeId },
+        { $pull: { items: { _id: itemId } } }
+      );
+    }
+
+    revalidatePath("/admin/store");
+    revalidatePath("/api/stores");
+    return { ok: true };
+  } catch (err) {
+    console.error("delete product error", err);
+    return { ok: false, error: "Failed to delete product" };
   }
 }

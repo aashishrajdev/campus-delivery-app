@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useMemo, useState, useEffect } from "react";
 import { DeliveryScreen } from "@/components/delivery-screen";
 import { VendingScreen } from "@/components/vending-screen";
@@ -43,10 +45,35 @@ export default function Home() {
   const [tempHostel, setTempHostel] = useState("");
   const [tempRoom, setTempRoom] = useState("");
 
-  const handleSaveAddress = () => {
+  // Persist address changes to DB
+  const updateAddress = async (hostel: string, room: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          address: hostel,
+          roomNumber: room,
+        }),
+      });
+    } catch (err) {
+      console.error("Failed to update address:", err);
+    }
+  };
+
+  const handleSaveAddress = async () => {
     setSelectedHostel(tempHostel);
     setRoomNumber(tempRoom);
     setIsAddressDialogOpen(false);
+
+    // Save to DB in background
+    await updateAddress(tempHostel, tempRoom);
   };
 
   const handleOpenAddressDialog = () => {
@@ -193,7 +220,7 @@ export default function Home() {
                 <>
                   {/* Header */}
                   {/* SnackHub Header (Image 0 Style) */}
-                  <div className="bg-primary text-primary-foreground p-4 pb-6 rounded-b-[2rem] shadow-md relative overflow-hidden">
+                  <div className="bg-primary text-primary-foreground p-4 pb-6 rounded-b-[1rem] shadow-md relative overflow-hidden">
                     {/* Decorative background circle */}
                     <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -403,6 +430,7 @@ export default function Home() {
               setSelectedHostel={setSelectedHostel}
               roomNumber={roomNumber}
               setRoomNumber={setRoomNumber}
+              onSaveAddress={updateAddress}
             />
           )}
           {activeScreen === "profile" && <ProfileScreen />}

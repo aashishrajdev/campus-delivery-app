@@ -9,7 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { updateStoreDetailsAction, updateProductAction } from "./store-actions";
+import {
+  updateStoreDetailsAction,
+  updateProductAction,
+  createStoreProductAction,
+  deleteStoreProductAction,
+} from "./store-actions";
 import {
   Table,
   TableBody,
@@ -140,6 +145,7 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
+  const [isNew, setIsNew] = useState(false); // Track if adding new
 
   // In this simplified version, we are editing existing items embedded in the store/vm.
   // Adding new items would require selecting from global Products (future improvement).
@@ -152,6 +158,30 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
   const handleEdit = (item: any) => {
     setEditingItem(item);
     setIsDialogOpen(true);
+    setIsNew(false);
+  };
+
+  const handleAdd = () => {
+    setEditingItem({});
+    setIsDialogOpen(true);
+    setIsNew(true);
+  };
+
+  const handleDelete = async (itemId: string) => {
+    if (!confirm("Are you sure you want to remove this item?")) return;
+
+    const fd = new FormData();
+    fd.append("storeId", data.id);
+    fd.append("type", type);
+    fd.append("itemId", itemId);
+
+    const res = await deleteStoreProductAction(fd);
+    if (res.ok) {
+      toast.success("Item removed");
+      router.refresh();
+    } else {
+      toast.error("Failed to remove item");
+    }
   };
 
   const handleSaveItem = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -160,7 +190,24 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
     const fd = new FormData(e.currentTarget);
     fd.append("storeId", data.id);
     fd.append("type", type);
-    fd.append("itemId", editingItem._id);
+    fd.append("storeId", data.id);
+    fd.append("type", type);
+    if (!isNew) {
+      fd.append("itemId", editingItem._id);
+    }
+
+    if (isNew) {
+      const res = await createStoreProductAction(fd);
+      setSaving(false);
+      setIsDialogOpen(false);
+      if (res.ok) {
+        toast.success("Product created");
+        router.refresh();
+      } else {
+        toast.error(res.error || "Failed");
+      }
+      return;
+    }
 
     // Extract values for optimistic update
     const newName = String(fd.get("name"));
@@ -211,8 +258,11 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Manage Inventory</CardTitle>
+        <Button onClick={handleAdd} size="sm">
+          Add Product
+        </Button>
       </CardHeader>
       <CardContent>
         <Table>
@@ -257,6 +307,14 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                   >
                     Edit
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="ml-2"
+                    onClick={() => handleDelete(item._id)}
+                  >
+                    Delete
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -266,7 +324,9 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Edit Item</DialogTitle>
+              <DialogTitle>
+                {isNew ? "Add New Product" : "Edit Item"}
+              </DialogTitle>
             </DialogHeader>
             {editingItem && (
               <form onSubmit={handleSaveItem} className="space-y-4">
@@ -275,10 +335,35 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                   <Input
                     name="name"
                     defaultValue={
-                      editingItem.productId?.name || editingItem.name
+                      isNew
+                        ? ""
+                        : editingItem.productId?.name || editingItem.name
                     }
+                    required
                   />
                 </div>
+                {isNew && (
+                  <>
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Input
+                        id="description"
+                        name="description"
+                        placeholder="Product description"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="image">Image URL</Label>
+                      <Input
+                        id="image"
+                        name="image"
+                        placeholder="/images/example.jpg"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="price">Price (₹)</Label>
@@ -287,8 +372,11 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                       name="price"
                       type="number"
                       defaultValue={
-                        editingItem.price || editingItem.productId?.price
+                        isNew
+                          ? ""
+                          : editingItem.price || editingItem.productId?.price
                       }
+                      required
                     />
                   </div>
                   {type === "store" ? (

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { hostels } from "@/lib/data";
 
 interface Order {
   _id: string;
@@ -31,7 +32,9 @@ interface UserProfile {
   name: string;
   email: string;
   phone?: string;
-  address?: string; // Currently 'hostel' in your model perhaps? adapting to generic address
+  address?: string; // This is the Hostel
+  roomNumber?: string;
+  profileImage?: string;
   orders?: Order[];
 }
 
@@ -47,6 +50,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Edit2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function ProfileScreen() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -55,8 +65,11 @@ export function ProfileScreen() {
   const [editForm, setEditForm] = useState({
     name: "",
     phone: "",
-    address: "",
+    address: "", // Hostel
+    roomNumber: "",
+    profileImage: "",
   });
+  const [avatars, setAvatars] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -78,6 +91,8 @@ export function ProfileScreen() {
             name: data.name || "",
             phone: data.phone || "",
             address: data.address || "",
+            roomNumber: data.roomNumber || "",
+            profileImage: data.profileImage || "",
           });
         }
       } catch (err) {
@@ -87,7 +102,20 @@ export function ProfileScreen() {
       }
     };
 
+    const fetchAvatars = async () => {
+      try {
+        const res = await fetch("/api/avatars");
+        if (res.ok) {
+          const data = await res.json();
+          setAvatars(data.avatars || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch avatars", err);
+      }
+    };
+
     fetchProfile();
+    fetchAvatars();
   }, []);
 
   const handleLogout = () => {
@@ -183,7 +211,7 @@ export function ProfileScreen() {
                   <Edit2 className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Edit Profile</DialogTitle>
                   <DialogDescription>
@@ -192,6 +220,35 @@ export function ProfileScreen() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Profile Picture</Label>
+                    <div className="grid grid-cols-5 gap-2 max-h-40 overflow-y-auto p-2 border rounded-md">
+                      {avatars.map((avatar) => (
+                        <button
+                          key={avatar}
+                          type="button"
+                          onClick={() =>
+                            setEditForm((prev) => ({
+                              ...prev,
+                              profileImage: avatar,
+                            }))
+                          }
+                          className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all ${
+                            editForm.profileImage === avatar
+                              ? "border-primary ring-2 ring-primary ring-offset-2"
+                              : "border-transparent hover:border-muted-foreground"
+                          }`}
+                        >
+                          <img
+                            src={`/${avatar}`}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
                     <Input
@@ -214,18 +271,41 @@ export function ProfileScreen() {
                       placeholder="+91..."
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">
-                      Delivery Address (Hostel/Room)
-                    </Label>
-                    <Input
-                      id="address"
-                      value={editForm.address}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, address: e.target.value })
-                      }
-                      placeholder="e.g. Hostel H1, Room 101"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="hostel">Hostel</Label>
+                      <Select
+                        value={editForm.address}
+                        onValueChange={(value) =>
+                          setEditForm({ ...editForm, address: value })
+                        }
+                      >
+                        <SelectTrigger id="hostel">
+                          <SelectValue placeholder="Select hostel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {hostels.map((hostel) => (
+                            <SelectItem key={hostel} value={hostel}>
+                              {hostel}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="roomNumber">Room Number</Label>
+                      <Input
+                        id="roomNumber"
+                        value={editForm.roomNumber}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            roomNumber: e.target.value,
+                          })
+                        }
+                        placeholder="e.g. 101"
+                      />
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button type="submit" disabled={saving}>
@@ -240,7 +320,11 @@ export function ProfileScreen() {
           <div className="flex items-center gap-4 mb-4">
             <Avatar className="w-20 h-20 border-4 border-background shadow-sm">
               <AvatarImage
-                src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`}
+                src={
+                  user.profileImage
+                    ? `/${user.profileImage}`
+                    : `https://api.dicebear.com/7.x/initials/svg?seed=${user.name}`
+                }
               />
               <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -265,7 +349,10 @@ export function ProfileScreen() {
           <MapPin className="w-5 h-5 text-primary" />
           <div>
             <p className="text-xs text-muted-foreground">Delivery Address</p>
-            <p className="font-medium">{user.address || "Not set"}</p>
+            <p className="font-medium">
+              {user.roomNumber ? `Room ${user.roomNumber}, ` : ""}
+              {user.address || "Not set"}
+            </p>
           </div>
         </div>
       </div>
