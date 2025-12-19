@@ -3,13 +3,14 @@ import type React from "react";
 export const dynamic = "force-dynamic";
 
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Alkatra } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const _geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
+const alkatra = Alkatra({ subsets: ["latin"], variable: "--font-alkatra" });
 
 export const metadata: Metadata = {
   title: "CampusCart - Campus Delivery & Events",
@@ -53,7 +54,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased ">
+      <body className={`font-sans antialiased ${alkatra.variable}`}>
         {children}
         <Toaster />
         <Analytics />

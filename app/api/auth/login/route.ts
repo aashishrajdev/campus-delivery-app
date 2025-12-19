@@ -17,14 +17,14 @@ export async function POST(request: NextRequest) {
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid credentials" },
+        { error: "Email is incorrect" },
         { status: 401 }
       );
     }
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return NextResponse.json(
-        { error: "Invalid credentials" },
+        { error: "Password is incorrect" },
         { status: 401 }
       );
     }
