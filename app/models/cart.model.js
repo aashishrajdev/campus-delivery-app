@@ -17,9 +17,22 @@ const CartItemSchema = new Schema(
             default: 1,
             min: 1,
         },
-        storeId: {
+        source: {
+            type: String,
+            enum: ['STORE', 'VENDING'],
+            required: true,
+            default: 'STORE'
+        },
+        sourceId: {
             type: Types.ObjectId,
-            ref: 'Store',
+            required: true,
+            refPath: 'items.sourceModel'
+        },
+        sourceModel: {
+            type: String,
+            required: true,
+            enum: ['Store', 'VendingMachine'],
+            default: 'Store'
         },
         image: {
             type: String,

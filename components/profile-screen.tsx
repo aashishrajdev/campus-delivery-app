@@ -73,7 +73,19 @@ export function ProfileScreen() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchAvatars = async () => {
+      try {
+        const res = await fetch("/api/avatars");
+        if (res.ok) {
+          const data = await res.json();
+          setAvatars(data.avatars || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch avatars", err);
+      }
+    };
+
+    const fetchData = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
         setLoading(false);
@@ -84,8 +96,20 @@ export function ProfileScreen() {
         const res = await fetch("/api/auth/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         if (res.ok) {
           const data = await res.json();
+
+          if (data._id || data.id) {
+            try {
+              const { getUserOrders } = await import("@/app/actions/order-actions");
+              const orders = await getUserOrders(data._id || data.id);
+              data.orders = orders;
+            } catch (e) {
+              console.error("Failed to fetch orders", e);
+            }
+          }
+
           setUser(data);
           setEditForm({
             name: data.name || "",
@@ -102,20 +126,8 @@ export function ProfileScreen() {
       }
     };
 
-    const fetchAvatars = async () => {
-      try {
-        const res = await fetch("/api/avatars");
-        if (res.ok) {
-          const data = await res.json();
-          setAvatars(data.avatars || []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch avatars", err);
-      }
-    };
-
-    fetchProfile();
     fetchAvatars();
+    fetchData();
   }, []);
 
   const handleLogout = () => {
@@ -233,11 +245,10 @@ export function ProfileScreen() {
                               profileImage: avatar,
                             }))
                           }
-                          className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all ${
-                            editForm.profileImage === avatar
-                              ? "border-primary ring-2 ring-primary ring-offset-2"
-                              : "border-transparent hover:border-muted-foreground"
-                          }`}
+                          className={`relative aspect-square rounded-full overflow-hidden border-2 transition-all ${editForm.profileImage === avatar
+                            ? "border-primary ring-2 ring-primary ring-offset-2"
+                            : "border-transparent hover:border-muted-foreground"
+                            }`}
                         >
                           <img
                             src={`/${avatar}`}
@@ -392,6 +403,14 @@ export function ProfileScreen() {
                       .map((i) => `${i.quantity}x ${i.name}`)
                       .join(", ")}
                   </p>
+                  {/* @ts-ignore */}
+                  {order.address && (
+                    <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1 border-t pt-2">
+                      <MapPin className="w-3 h-3" />
+                      {/* @ts-ignore */}
+                      {order.address}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

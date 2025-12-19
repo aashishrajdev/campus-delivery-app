@@ -7,6 +7,7 @@ import { ChevronRight, MapPin, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { FoodTypeBadge } from "@/components/store-list";
+import { useCart } from "@/components/cart-context";
 
 export default function VendingMachineDetails({
   params,
@@ -71,18 +72,22 @@ export default function VendingMachineDetails({
 
   // ... (rest of code)
 
-  const handleOrderProduct = async (productId: string) => {
-    try {
-      setOrdering(true);
-      // Simulate API call for vending dispense
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      toast.success("Order placed! Product dispensed.");
-    } catch (err) {
-      console.error("Order error:", err);
-      toast.error("Failed to place order");
-    } finally {
-      setOrdering(false);
-    }
+  const { addToCart, cartItems } = useCart();
+
+  // Calculate total items in cart for floating button
+  const totalCartItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const handleOrderProduct = (product: any) => {
+    addToCart({
+      productId: product._id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      source: "VENDING",
+      sourceId: id,
+      sourceModel: "VendingMachine",
+      image: product.image
+    });
   };
 
   if (!loading && !machine) {
@@ -95,18 +100,38 @@ export default function VendingMachineDetails({
   }
 
   return (
-    <div className="bg-background min-h-screen pb-4">
+    <div className="bg-background min-h-screen pb-20">
       <div className="px-4 pt-4">
         <div className="animate-in fade-in-50 slide-in-from-right-4">
-          <button
-            onClick={() => router.push("/restaurant/vending")}
-            className="text-primary mb-4 flex items-center gap-2 hover:gap-3 transition-all font-medium active:scale-95"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to machines
-          </button>
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => router.push("/restaurant/vending")}
+              className="text-primary flex items-center gap-2 hover:gap-3 transition-all font-medium active:scale-95"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to machines
+            </button>
+            {/* Cart Link */}
+            {totalCartItems > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => router.push("/restaurant/cart")}
+                className="flex items-center gap-2"
+              >
+                <div className="relative">
+                  🛒
+                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                    {totalCartItems}
+                  </span>
+                </div>
+                Cart
+              </Button>
+            )}
+          </div>
 
           <Card className="p-4 mb-4 bg-gradient-to-br from-primary/10 to-accent/10 border-accent/30">
+            {/* ... Header content ... */}
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 bg-gradient-to-br from-accent/40 to-primary/40 rounded-xl flex items-center justify-center text-3xl">
                 🏪
@@ -152,7 +177,7 @@ export default function VendingMachineDetails({
                   };
                 }
 
-                const isOrderingDisabled = ordering || quantity === 0;
+                // Check cart for this specific item quantity if needed, but generic 'Add' is fine
 
                 return (
                   <Card
@@ -161,6 +186,7 @@ export default function VendingMachineDetails({
                     style={{ animationDelay: `${index * 75}ms` }}
                   >
                     <div className="flex items-center gap-4">
+                      {/* Image logic */}
                       <div className="w-20 h-20 bg-gradient-to-br from-accent/20 to-primary/20 rounded-xl flex items-center justify-center text-4xl shadow-sm overflow-hidden">
                         {product.image ? (
                           <img
@@ -198,10 +224,9 @@ export default function VendingMachineDetails({
                       <Button
                         size="sm"
                         className="w-full mt-3 bg-accent hover:bg-accent/90"
-                        onClick={() => handleOrderProduct(product._id)}
-                        disabled={ordering}
+                        onClick={() => handleOrderProduct(product)}
                       >
-                        {ordering ? "Processing..." : "Order Now"}
+                        Add to Cart
                       </Button>
                     )}
                   </Card>

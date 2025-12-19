@@ -16,6 +16,7 @@ export default function StoreDetailsPage({
   const router = useRouter();
   const {
     cartItems,
+    addToCart,
     updateQuantity,
     totals,
     selectedHostel,
@@ -103,10 +104,27 @@ export default function StoreDetailsPage({
         deliveryItems={deliveryItems}
         cartItems={cartItems}
         onUpdateQuantity={updateQuantity}
+        onAddToCart={(item: any) => {
+          // Found the item in deliveryItems
+          // We need to construct the CartItem object
+          // item here is from DeliveryScreen's onAddToCart call which passes the item object from deliveryItems
+
+          // Wait, DeliveryScreen onAddToCart(item) passes the simplified screen item.
+          // We need to map it back to CartItem schema
+          addToCart({
+            productId: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: 1,
+            source: "STORE",
+            sourceId: storeId, // Using current storeId context
+            sourceModel: "Store",
+            image: item.image
+          });
+        }}
         onProceedToCart={() => {
           if (!localStorage.getItem("token")) {
             alert("Please login to order.");
-            // Ideally redirect to detailed profile login or just alert
             return;
           }
           router.push("/restaurant/cart");

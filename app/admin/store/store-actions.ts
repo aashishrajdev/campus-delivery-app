@@ -222,3 +222,21 @@ export async function deleteStoreProductAction(formData: FormData) {
     return { ok: false, error: "Failed to delete product" };
   }
 }
+
+export async function updateOrderStatusAction(orderId: string, status: string) {
+  try {
+    const conn = await dbConnect();
+    if (!conn) return { ok: false, error: "DB Error" };
+
+    // Dynamically import to avoid circular dependency if any, though unlikely here
+    const Order = (await import("@/app/models/order.model")).default;
+
+    await Order.findByIdAndUpdate(orderId, { status });
+
+    revalidatePath("/admin/store");
+    return { ok: true };
+  } catch (err) {
+    console.error("update order status error", err);
+    return { ok: false, error: "Failed to update status" };
+  }
+}
