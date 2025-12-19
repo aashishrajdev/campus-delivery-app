@@ -61,6 +61,9 @@ export async function PUT(request: NextRequest) {
         { status: 500 }
       );
     }
+    const user = await User.findById(payload.id).select('email phone name address roomNumber');
+    if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     const updatedUser = await User.findByIdAndUpdate(
       payload.id,
@@ -73,6 +76,11 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({
+        email: user.email,
+        phone: user.phone,
+        name: user.name,
+        address: user.address,
+        roomNumber: user.roomNumber,
       email: updatedUser.email,
       phone: updatedUser.phone,
       name: updatedUser.name,

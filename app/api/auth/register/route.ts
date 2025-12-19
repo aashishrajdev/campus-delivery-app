@@ -5,21 +5,15 @@ import bcrypt from "bcryptjs";
 import { signToken } from "@/app/utils/jwt";
 
 export async function POST(request: NextRequest) {
-  try {
-    const { email, password, name, phone, address } = await request.json();
-    const conn = await dbConnect();
-    if (!conn) {
-      return NextResponse.json(
-        { error: "Database not configured" },
-        { status: 500 }
-      );
-    }
-    if (!email || !password || !name || !phone || !address) {
-      return NextResponse.json(
-        { error: "All fields are required" },
-        { status: 400 }
-      );
-    }
+    try {
+        const { email, password, name, phone, address, roomNumber } = await request.json();
+        const conn = await dbConnect();
+        if (!conn) {
+            return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+        }
+        if (!email || !password || !name || !phone || !address) {
+            return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+        }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -31,13 +25,14 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({
-      email,
-      password: hashedPassword,
-      name,
-      phone,
-      address,
-    });
+        const newUser = await User.create({
+            email,
+            password: hashedPassword,
+            name,
+            phone,
+            address,
+            roomNumber
+        });
 
     const token = signToken({ id: newUser._id, email: newUser.email });
     return NextResponse.json({ token }, { status: 201 });
