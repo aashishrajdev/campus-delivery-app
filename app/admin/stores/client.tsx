@@ -233,6 +233,7 @@ export function StoresListClient({ stores }: { stores: any[] }) {
                 setSaving(false);
               }
             }}
+            
             onClose={() => {
               setOpen(false);
               setEditingStore(null);
