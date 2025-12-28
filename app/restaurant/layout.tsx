@@ -1,4 +1,5 @@
 import { CartProvider } from "@/components/cart-context";
+import { WebMobileLayout } from "@/components/web-mobile-layout";
 import { RestaurantLayoutNav } from "@/components/restaurant-layout-nav";
 import { GlobalCartFooter } from "@/components/global-cart-footer";
 
@@ -11,11 +12,13 @@ export default function RestaurantLayout({
 }) {
   return (
     <CartProvider>
-      <div className="min-h-screen bg-background pb-20 max-w-[480px] mx-auto overflow-hidden">
-        {children}
+      <WebMobileLayout>
+        <div className="h-full w-full overflow-y-auto no-scrollbar pb-20">
+          {children}
+        </div>
         <GlobalCartFooter />
         <RestaurantLayoutNav />
-      </div>
+      </WebMobileLayout>
     </CartProvider>
   );
 }

@@ -386,8 +386,7 @@ export function DeliveryScreen({
                           onClick={() => onAddToCart(item)}
                           className="w-full bg-[#1C45C2] text-[#ffffff] font-extrabold text-sm py-2.5 rounded-xl  uppercase tracking-wider shadow-lg flex items-center justify-center gap-1 active:scale-95 transition-all"
                         >
-                          ADD{" "}
-                          <Plus className="w-3 h-3 absolute top-1.5 right-1.5 text-[10px]" />
+                          ADD
                         </button>
                       ) : (
                         <div className="w-full flex items-center justify-between bg-[#1C45C2] rounded-xl h-[38px] overflow-hidden shadow-lg">
