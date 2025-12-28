@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Minus,
-  ShoppingCart,
   MapPin,
   Search,
   Filter,

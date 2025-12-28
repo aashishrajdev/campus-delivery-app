@@ -155,14 +155,20 @@ export default function RestaurantClient({
           onOpenChange={setIsAddressDialogOpen}
         >
           <DialogTrigger asChild>
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10 relative z-10 cursor-pointer hover:bg-white/20 transition-all active:scale-[0.98]">
+            <button
+              type="button"
+              className="w-full text-left bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10 relative z-10 cursor-pointer hover:bg-white/20 transition-all active:scale-[0.98]"
+            >
               <div className="flex items-center gap-2 mb-1 opacity-90">
                 <MapPin className="w-4 h-4" />
                 <span className="text-sm font-medium">Delivery Address</span>
               </div>
               <div
                 className="flex items-center justify-between"
-                onClick={handleOpenAddressDialog}
+                onClick={(e) => {
+                  e.stopPropagation(); // prevent double trigger if parent is listening
+                  handleOpenAddressDialog();
+                }}
               >
                 {selectedHostel ? (
                   <span className="font-bold text-lg truncate">
@@ -178,7 +184,7 @@ export default function RestaurantClient({
                   Change
                 </span>
               </div>
-            </div>
+            </button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px] rounded-2xl">
             <DialogHeader>
