@@ -1,7 +1,7 @@
 // Static data for the campus delivery app
 
 export const hostels = [
-  "Aryabhatta Hostel",
+  " zakir c Hostel",
   "Chanakya Hostel",
   "Ramanujan Hostel",
   "Kalam Hostel",
