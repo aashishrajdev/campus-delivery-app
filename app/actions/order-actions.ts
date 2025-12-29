@@ -65,6 +65,7 @@ interface CreateOrderParams {
   totalAmount: number;
   paymentMethod: string;
   address: any;
+  roomNumber?: string;
 }
 
 export async function createOrder({
@@ -73,25 +74,40 @@ export async function createOrder({
   totalAmount,
   paymentMethod,
   address,
+  roomNumber,
 }: CreateOrderParams) {
   await dbConnect();
 
   try {
+    const user = await User.findById(userId);
+    console.log("DEBUG: createOrder received:", {
+      address,
+      roomNumber,
+      userId,
+    });
+    console.log(
+      "DEBUG: User fetched:",
+      user ? { name: user.name, phone: user.phone } : "No User"
+    );
+
     const newOrder = new Order({
       userId,
       items,
       totalAmount,
       paymentMethod,
-      paymentStatus: paymentMethod === "ONLINE" ? "PENDING" : "PENDING", // Update to COMPLETED immediately if COD? Usually COD is PENDING until delivery.
+      paymentStatus: paymentMethod === "ONLINE" ? "PENDING" : "PENDING",
       status: "PENDING",
       address: address,
-      // Add other fields if needed from address
+      roomNumber: roomNumber,
+      userName: user ? user.name : "Unknown",
+      userPhone: user ? user.phone : "",
     });
+
+    console.log("DEBUG: newOrder toObject before save:", newOrder.toObject());
 
     let razorpayOrderData = null;
 
     if (paymentMethod === "ONLINE") {
-      // Try process.env first, then manual parsing
       let keyId =
         process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
       let keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -509,6 +525,13 @@ export async function getStoreOrders(storeId: string) {
     const orders = await Order.find({ "items.sourceId": storeId })
       .sort({ createdAt: -1 })
       .lean();
+
+    if (orders.length > 0) {
+      console.log(
+        "DEBUG: getStoreOrders first order raw:",
+        JSON.stringify(orders[0], null, 2)
+      );
+    }
 
     // Filter items to only show those belonging to this store
     const filteredOrders = orders

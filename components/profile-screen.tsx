@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { hostels } from "@/lib/data";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useCart } from "@/app/context/CartContext";
 
 interface Order {
   _id: string;
@@ -60,6 +61,7 @@ import {
 } from "@/components/ui/select";
 
 export function ProfileScreen() {
+  const { setSelectedHostel, setRoomNumber } = useCart();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -158,6 +160,10 @@ export function ProfileScreen() {
         const updatedUser = await res.json();
         setUser({ ...user, ...updatedUser });
         setIsEditing(false);
+
+        // Update global cart context
+        if (updatedUser.address) setSelectedHostel(updatedUser.address);
+        if (updatedUser.roomNumber) setRoomNumber(updatedUser.roomNumber);
       } else {
         alert("Failed to update profile");
       }
@@ -198,7 +204,7 @@ export function ProfileScreen() {
 
   return (
     <div className="pb-24 pt-6 px-4 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md pb-4 pt-4 px-4 -mx-4 border-b flex items-center justify-between shadow-sm mb-6">
         <h1 className="text-2xl font-bold">My Profile</h1>
         <div className="flex items-center gap-2">
           <ModeToggle />

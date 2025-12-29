@@ -375,9 +375,24 @@ function OrdersManager({
                       <div className="font-bold">
                         Total Earnings: ₹{storeTotal}
                       </div>
+                      {order.userName && (
+                        <div className="text-sm font-medium">
+                          Customer: {order.userName}
+                        </div>
+                      )}
                       {order.address && (
                         <div className="text-xs text-muted-foreground">
-                          Deliver to: {order.address}
+                          Hostel: {order.address}
+                        </div>
+                      )}
+                      {order.roomNumber && (
+                        <div className="text-xs text-muted-foreground">
+                          Room: {order.roomNumber}
+                        </div>
+                      )}
+                      {order.userPhone && (
+                        <div className="text-xs text-muted-foreground">
+                          Phone: {order.userPhone}
                         </div>
                       )}
                     </div>

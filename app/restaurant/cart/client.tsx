@@ -165,7 +165,8 @@ export default function CartClient() {
         })),
         totalAmount: grandTotal,
         paymentMethod,
-        address,
+        address: selectedHostel,
+        roomNumber: roomNumber,
       });
 
       if (result.success) {
