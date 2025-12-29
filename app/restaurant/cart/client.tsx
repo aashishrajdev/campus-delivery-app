@@ -283,11 +283,20 @@ export default function CartClient() {
 
           {cartItems.length === 0 ? (
             <Card className="p-8 text-center text-muted-foreground border-dashed bg-muted/50">
-              Your cart is empty, Or refresh the page
+              <p>
+                Your cart is empty, Or{" "}
+                <span
+                  onClick={() => window.location.reload()}
+                  className="underline cursor-pointer hover:text-primary"
+                >
+                  refresh
+                </span>{" "}
+                the page
+              </p>
               <Button
                 variant="link"
                 onClick={() => router.push("/restaurant")}
-                className="mt-2 text-primary"
+                className="mt-2 text-primary block mx-auto"
               >
                 Browse Snacks
               </Button>

@@ -206,7 +206,7 @@ export function ProfileScreen() {
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+            className="text-muted-foreground hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 gap-2 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Logout

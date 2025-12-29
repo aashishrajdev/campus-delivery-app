@@ -16,7 +16,7 @@ export async function loginAction(formData: FormData) {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 1/2, //  30 minutes
+      maxAge: 60 * 60 * 4, // 4 hours
     });
     return { ok: true };
   }
@@ -43,7 +43,8 @@ export async function syncProductsAction() {
   try {
     const conn = await dbConnect();
     if (!conn) {
-      return { ok: false, error: "Database not configured. Set MONGO_URI." };
+      console.error("Database not configured. Set MONGO_URI.");
+      return;
     }
     for (const item of deliveryItems) {
       const availability =
@@ -60,10 +61,8 @@ export async function syncProductsAction() {
         { upsert: true, new: true }
       );
     }
-    return { ok: true };
   } catch (err) {
     console.error("syncProductsAction error:", err);
-    return { ok: false, error: "Failed to sync products" };
   }
 }
 
@@ -71,7 +70,8 @@ export async function syncEventsAction() {
   try {
     const conn = await dbConnect();
     if (!conn) {
-      return { ok: false, error: "Database not configured. Set MONGO_URI." };
+      console.error("Database not configured. Set MONGO_URI.");
+      return;
     }
     for (const ev of staticEvents) {
       await EventModel.findOneAndUpdate(
@@ -87,10 +87,8 @@ export async function syncEventsAction() {
         { upsert: true, new: true }
       );
     }
-    return { ok: true };
   } catch (err) {
     console.error("syncEventsAction error:", err);
-    return { ok: false, error: "Failed to sync events" };
   }
 }
 
@@ -98,7 +96,8 @@ export async function syncVendingMachinesAction() {
   try {
     const conn = await dbConnect();
     if (!conn) {
-      return { ok: false, error: "Database not configured. Set MONGO_URI." };
+      console.error("Database not configured. Set MONGO_URI.");
+      return;
     }
     for (const machine of staticVendingMachines) {
       const items = machine.items.map((item: any) => ({
@@ -119,9 +118,7 @@ export async function syncVendingMachinesAction() {
         { upsert: true, new: true }
       );
     }
-    return { ok: true };
   } catch (err) {
     console.error("syncVendingMachinesAction error:", err);
-    return { ok: false, error: "Failed to sync vending machines" };
   }
 }

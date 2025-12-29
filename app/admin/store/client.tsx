@@ -338,16 +338,18 @@ function OrdersManager({
                           {order.status}
                         </Badge>
 
-                        <Badge
-                          variant="outline"
-                          className={
-                            isSettled
-                              ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
-                              : "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800"
-                          }
-                        >
-                          {isSettled ? "Settled" : "Settlement Pending"}
-                        </Badge>
+                        {order.status !== "CANCELLED" && (
+                          <Badge
+                            variant="outline"
+                            className={
+                              isSettled
+                                ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
+                                : "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800"
+                            }
+                          >
+                            {isSettled ? "Settled" : "Settlement Pending"}
+                          </Badge>
+                        )}
 
                         <span
                           className="text-sm text-muted-foreground"

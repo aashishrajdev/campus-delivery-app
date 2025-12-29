@@ -14,8 +14,12 @@ import Product from "@/app/models/product.model";
 import VendingMachine from "@/app/models/vendingMachine.model";
 import Event from "@/app/models/events.model";
 import { AutoRefresh } from "@/components/auto-refresh";
-import { getAdminStats } from "@/app/actions/order-actions";
+import {
+  getAdminStats,
+  getAllOrdersForAdmin,
+} from "@/app/actions/order-actions";
 import { AdminOrderStats } from "@/components/admin-order-stats";
+import { AdminAllOrders } from "@/components/admin-all-orders";
 import { ModeToggle } from "@/components/mode-toggle";
 
 async function getAuth() {
@@ -24,10 +28,12 @@ async function getAuth() {
 }
 
 export default async function AdminDashboard() {
+  // Force rebuild to fix hydration
   const isAuthed = await getAuth();
   if (!isAuthed) redirect("/admin/login");
 
   let orderStats = { storeStats: [], vendingStats: [] };
+  let allOrders: any[] = [];
 
   try {
     const conn = await dbConnect();
@@ -36,6 +42,7 @@ export default async function AdminDashboard() {
     // Fetch Order Stats
     try {
       orderStats = await getAdminStats();
+      allOrders = await getAllOrdersForAdmin();
     } catch (e) {
       console.error("Failed to fetch order stats", e);
     }
@@ -103,6 +110,9 @@ export default async function AdminDashboard() {
         {/* Order Stats Section */}
         <AdminOrderStats stats={orderStats} />
 
+        {/* All Orders Table */}
+        <AdminAllOrders orders={allOrders} />
+
         {/* Quick Commands */}
         <Card>
           {/* ... Keep Quick Commands ... */}
@@ -110,8 +120,19 @@ export default async function AdminDashboard() {
             <CardTitle>Quick Commands</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {/* ... */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="flex gap-2 mb-4">
+              <form action={syncEventsAction}>
+                <Button variant="outline" size="sm">
+                  Sync Events
+                </Button>
+              </form>
+              <form action={syncVendingMachinesAction}>
+                <Button variant="outline" size="sm">
+                  Sync Vending Machines
+                </Button>
+              </form>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <Button variant="default" asChild className="rounded-lg">
                 <Link href="/admin/products">Manage products</Link>
               </Button>
@@ -132,7 +153,7 @@ export default async function AdminDashboard() {
             </Button>
           </CardContent>
         </Card>
-        <AutoRefresh />
+        <AutoRefresh intervalMs={10000} />
       </div>
     );
   } catch (err) {

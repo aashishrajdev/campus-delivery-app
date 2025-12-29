@@ -385,6 +385,7 @@ export async function getAdminStats() {
   try {
     const rawStats = await Order.aggregate([
       { $unwind: "$items" },
+      { $match: { status: { $ne: "CANCELLED" } } },
       {
         $group: {
           _id: { source: "$items.source", sourceId: "$items.sourceId" },
@@ -548,5 +549,116 @@ export async function cancelOrderAction(orderId: string) {
   } catch (error) {
     console.error("Error cancelling order:", error);
     return { ok: false, error: "Failed to cancel order" };
+  }
+}
+
+export async function getAllOrdersForAdmin() {
+  await dbConnect();
+  try {
+    const orders = await Order.find({})
+      .sort({ createdAt: -1 })
+      .populate("userId", "name email phone")
+      .lean();
+
+    const ordersJson = JSON.parse(JSON.stringify(orders));
+
+    const sourceIds = new Set();
+    ordersJson.forEach((order: any) => {
+      if (order.items && order.items.length > 0) {
+        order.items.forEach((item: any) => {
+          if (item.sourceId) sourceIds.add(item.sourceId);
+        });
+      }
+    });
+
+    const storeMap: Record<string, { name: string; phone: string | null }> = {};
+    const vendingMap: Record<string, { name: string; phone: string | null }> =
+      {};
+
+    const storeIds = new Set();
+    const vendingIds = new Set();
+
+    ordersJson.forEach((order: any) => {
+      if (order.items) {
+        order.items.forEach((item: any) => {
+          if (item.sourceModel === "Store") storeIds.add(item.sourceId);
+          else if (item.sourceModel === "VendingMachine")
+            vendingIds.add(item.sourceId);
+        });
+      }
+    });
+
+    for (const sid of Array.from(storeIds)) {
+      try {
+        let store: any = await Store.findOne({ id: sid }).select(
+          "name phoneNumber"
+        );
+        if (!store && Types.ObjectId.isValid(sid as string)) {
+          store = await Store.findById(sid).select("name phoneNumber");
+        }
+        if (store) {
+          storeMap[sid as string] = {
+            name: store.name,
+            phone: store.phoneNumber,
+          };
+        }
+      } catch (e) {
+        console.error(`Failed to fetch store ${sid}`, e);
+      }
+    }
+
+    for (const vid of Array.from(vendingIds)) {
+      try {
+        let vm: any = null;
+        if (Types.ObjectId.isValid(vid as string)) {
+          vm = await VendingMachine.findById(vid).select("name names");
+        }
+        if (vm) {
+          const vName = vm.names || vm.name || "Vending Machine";
+          vendingMap[vid as string] = { name: vName, phone: null };
+        }
+      } catch (e) {
+        console.error(`Failed to fetch VM ${vid}`, e);
+      }
+    }
+
+    const enrichedOrders = ordersJson.map((order: any) => {
+      // Assuming all items in an order are from the same source for simplicity of display,
+      // or we just take the first source we find to label the order source.
+      // But items might be mixed? Usually not?
+      // Let's resolve source for the order display based on the first item.
+
+      const firstItem = order.items[0];
+      let sourceName = "Unknown Source";
+
+      if (firstItem) {
+        if (firstItem.sourceModel === "Store") {
+          sourceName = storeMap[firstItem.sourceId]?.name || "Unknown Store";
+        } else if (firstItem.sourceModel === "VendingMachine") {
+          sourceName =
+            vendingMap[firstItem.sourceId]?.name || "Vending Machine";
+        }
+      }
+
+      const storeTotal = order.items.reduce(
+        (acc: number, item: any) =>
+          acc + (item.price || 0) * (item.quantity || 1),
+        0
+      );
+
+      return {
+        ...order,
+        sourceName,
+        storeTotal,
+        userName: order.userId?.name || "Unknown User",
+        userEmail: order.userId?.email,
+        userPhone: order.userId?.phone,
+      };
+    });
+
+    return enrichedOrders;
+  } catch (error) {
+    console.error("Error fetching all orders for admin:", error);
+    return [];
   }
 }
