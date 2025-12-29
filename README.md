@@ -1,110 +1,125 @@
 # Campus Delivery App
 
-A comprehensive full-stack delivery application designed for campus environments. This platform connects students and staff with local stores and vending machines, facilitating seamless ordering, payment processing, and delivery management.
+A robust, multi-role food delivery platform tailored for university campuses. This application bridges the gap between students, campus stores, and administrators, offering a seamless ordering experience and powerful management tools.
 
-## 🚀 Features
+## 🚀 Key Features
 
-- **User Authentication**: Secure login and registration system.
-- **Store & Vending Machine Integration**: Browse products from various stores and connected vending machines.
-- **Smart Cart & Checkout**: Robust cart management with real-time price calculation and secure checkout.
-- **Order Management**: Track order history and status.
-- **Admin Dashboard**:
-  - Manage Stores and Products.
-  - Monitor Vending Machines.
-  - Create and Manage Events.
-  - View Sales Stats and Analytics.
-- **Payments**: Integrated Razorpay payment gateway for secure online transactions.
-- **Notifications**: Email notifications for order confirmations and updates using Nodemailer.
-- **Responsive Design**: Modern, mobile-first UI built with Tailwind CSS and Radix UI.
+### 👤 User Portal (Students/Staff)
+- **Seamless Ordering**: Browse campus stores, view detailed menus, and place orders with ease.
+- **Vending Machine Integration**: Unique interface to browse and order from smart vending machines across campus.
+- **Smart Cart**: Persistent cart functionality with real-time price calculation.
+- **Secure Payments**: Integrated **Razorpay** gateway for safe and reliable transactions.
+- **Real-Time Tracking**: Track order status from "Pending" to "Delivered".
+- **Order History**: Comprehensive dashboard to view past orders and spending patterns.
+- **Profile Management**: Manage delivery addresses and personal details.
 
-## 🛠️ Tech Stack
+### 🏪 Store Portal (Vendors)
+- **Menu Management**: Full control to add, edit, or remove items (products) with images, prices, and stock status.
+- **Order Management**: Real-time dashboard to receive incoming orders and update statuses (Pending -> Preparing -> Ready -> Delivered).
+- **Store Profile**: Manage store hours, description, and branding.
 
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-- **Frontend**: React 19, [Tailwind CSS](https://tailwindcss.com/), [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/)
-- **Backend**: Next.js Server Actions
-- **Database**: MongoDB with [Mongoose](https://mongoosejs.com/)
-- **Authentication**: JWT & Bcrypt based custom auth
-- **Payments**: [Razorpay](https://razorpay.com/)
-- **Validation**: [Zod](https://zod.dev/) & React Hook Form
-- **Email**: Nodemailer (Gmail OAuth2)
+### 🛡️ Admin Dashboard (Super Admin)
+- **Centralized Control**: Comprehensive overview of all platform activities.
+- **Store Management**: Onboard new stores, manage existing accounts, and oversee store performance.
+- **Vending Network**: Manage vending machine locations, stock, and status.
+- **Event Management**: Create and manage campus updates or food-related events.
+- **Product Oversight**: Global view of products across all stores.
 
-## 📋 Prerequisites
+## 🛠️ Technology Stack
 
-Before running the application, ensure you have the following installed:
+- **Frontend Framework**: [Next.js 16](https://nextjs.org/) (App Directory)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **UI & Styling**: 
+  - [Tailwind CSS](https://tailwindcss.com/) for responsive design.
+  - [Radix UI](https://www.radix-ui.com/) & [shadcn/ui](https://ui.shadcn.com/) for accessible components.
+  - [Lucide React](https://lucide.dev/) for iconography.
+- **Backend & Database**:
+  - **Database**: [MongoDB](https://www.mongodb.com/) (using [Mongoose](https://mongoosejs.com/) ORM).
+  - **Authentication**: Custom JWT-based auth with [bcryptjs](https://www.npmjs.com/package/bcryptjs) hashing.
+- **Payments**: [Razorpay](https://razorpay.com/) integration.
+- **Form Handling**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/) validation.
 
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- [MongoDB](https://www.mongodb.com/) (Local or Atlas connection string)
+## 🏁 Getting Started
 
-## ⚙️ Installation
+### Prerequisites
 
-1. **Clone the repository:**
+Ensure you have the following installed:
+- **Node.js** (v18 or higher)
+- **MongoDB** (Local instance or Atlas connection)
+- **npm** or **pnpm**
 
-   ```bash
-   git clone <repository-url>
-   cd campus-delivery-app
-   ```
+### Installation
 
-2. **Install dependencies:**
+1.  **Clone the repository**:
+    ```bash
+    git clone <repository-url>
+    cd campus-delivery-app
+    ```
 
-   ```bash
-   npm install
-   # or
-   pnpm install
-   # or
-   yarn install
-   ```
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    # or
+    pnpm install
+    ```
 
-3. **Set up Environment Variables:**
-   Create a `.env.local` file in the root directory and add the following variables:
+3.  **Environment Configuration**:
+    Create a `.env.local` file in the root directory and populate it with the necessary keys (see below).
 
-   ```env
-   # Database
-   MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<dbname>
+4.  **Run the application**:
+    ```bash
+    npm run dev
+    ```
+    Access the app at [http://localhost:3000](http://localhost:3000).
 
-   # Authentication
-   JWT_SECRET=your_jwt_secret_key
+## 🔐 Environment Variables
 
-   # Email Configuration (Nodemailer with Gmail OAuth2)
-   EMAIL_USER=your_email@gmail.com
-   EMAIL_PASS=your_email_password # Optional if using OAuth
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-   GOOGLE_REFRESH_TOKEN=your_google_refresh_token
+The application requires the following environment variables to function correctly.
 
-   # Payment Gateway (Razorpay)
-   RAZORPAY_KEY_ID=your_razorpay_key_id
-   RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-   NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key_id # For client-side access
-   ```
+**`.env.local`**:
 
-## 🏃‍♂️ Running the Application
+```env
+# 🗄️ Database
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/campus-db
 
-Start the development server:
+# 🔑 Authentication
+JWT_SECRET=your_super_secret_jwt_key
 
-```bash
-npm run dev
-# or
-pnpm dev
+# 💳 Payments (Razorpay)
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=your_razorpay_secret
+
+# 🛡️ Super Admin Credentials
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=secure_admin_password
+
+# 🌐 App Config
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
 ## 📂 Project Structure
 
-- `app/`: Next.js App Router structure.
-  - `admin/`: Admin dashboard routes.
-  - `api/`: API endpoints.
-  - `models/`: Mongoose schemas (User, Order, Store, etc.).
-  - `restaurant/`: Store and ordering interface.
-  - `(auth)/`: Authentication routes (login/register).
-- `components/`: Reusable UI components.
-- `lib/`: Utility libraries.
-- `utils/`: Helper functions (JWT, Mail, Date formatting).
+A quick look at the top-level directory structure:
 
-## 🤝 Contributing
+- **`/app`**: Next.js App Router structure.
+  - **`/admin`**: Super admin dashboard routes and actions.
+  - **`/api`**: Backend API routes (Auth, Webhooks).
+  - **`/restaurant`**: User-facing store browsing and "My Store" interfaces.
+  - **`/models`**: Mongoose schemas (User, Store, Order, Product, etc.).
+- **`/components`**: Reusable React components (UI primitives, feature-specific blocks).
+- **`/lib`**: Shared utilities (DB connection, formatters).
+- **`/public`**: Static assets.
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 📜 Scripts
 
-## 📄 License
+- `npm run dev`: Start the development server.
+- `npm run build`: Build the app for production.
+- `npm start`: Run the production build.
+- `npm run lint`: Run ESLint to ensure code quality.
 
-This project is licensed under the MIT License.
+## 👥 Contributors & Managers
+
+This project is actively maintained and managed by:
+
+- **Aashish Raj** ([@aashishrajdev](https://github.com/aashishrajdev))
+- **Ashish Chaurasiya** ([@drdead](https://github.com/drdead))

@@ -662,3 +662,25 @@ export async function getAllOrdersForAdmin() {
     return [];
   }
 }
+
+export async function cancelOrderAction(orderId: string) {
+    await dbConnect();
+    try {
+        const order = await Order.findById(orderId);
+        if (!order) return { ok: false, error: "Order not found" };
+
+        // Allow cancellation if PENDING or CONFIRMED
+        // (Assuming CONFIRMED is before PREPARING)
+        if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
+            return { ok: false, error: "Order cannot be cancelled at this stage" };
+        }
+
+        order.status = "CANCELLED";
+        await order.save();
+
+        return { ok: true };
+    } catch (error) {
+        console.error("Error cancelling order:", error);
+        return { ok: false, error: "Failed to cancel order" };
+    }
+}
