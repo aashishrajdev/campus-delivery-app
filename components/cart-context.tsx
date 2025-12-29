@@ -51,7 +51,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (savedCart) {
       try {
         setCartItems(JSON.parse(savedCart));
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     // Fetch profile for address
@@ -87,6 +89,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cartItems, isClient]);
 
+  // Polling to sync across tabs/windows
+  useEffect(() => {
+    if (!isClient) return;
+
+    const interval = setInterval(() => {
+      const savedCart = localStorage.getItem("cart");
+      if (savedCart) {
+        try {
+          const parsed = JSON.parse(savedCart);
+          // Simple deep comparison via stringify to avoid unnecessary re-renders
+          // Note: This relies on consistent object key order, which is fine for simple cart items
+          if (JSON.stringify(parsed) !== JSON.stringify(cartItems)) {
+            setCartItems(parsed);
+          }
+        } catch (e) {
+          console.error("Failed to parse cart during poll", e);
+        }
+      } else if (cartItems.length > 0) {
+        // If local storage is empty but state has items, clear state
+        // This handles "Clear Cart" from another tab
+        setCartItems([]);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isClient, cartItems]);
+
   const addToCart = (item: CartItem) => {
     setCartItems((prev) => {
       const existingIndex = prev.findIndex(
@@ -107,18 +136,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const updateQuantity = (productId: string, delta: number) => {
     setCartItems((prev) => {
-      return prev.map(item => {
-        if (item.productId === productId) {
-          const newQty = Math.max(0, item.quantity + delta);
-          // If 0, it will be filtered out below? No, map keeps length.
-          // We should filter after or handle 0 removal in removeFromCart?
-          // existing logic in simple cart usually removes on 0.
-          // But let's keep it simple: min 0. If 0, UI might show "Add".
-          // Actually better to remove if 0.
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      }).filter(item => item.quantity > 0);
+      return prev
+        .map((item) => {
+          if (item.productId === productId) {
+            const newQty = Math.max(0, item.quantity + delta);
+            // If 0, it will be filtered out below? No, map keeps length.
+            // We should filter after or handle 0 removal in removeFromCart?
+            // existing logic in simple cart usually removes on 0.
+            // But let's keep it simple: min 0. If 0, UI might show "Add".
+            // Actually better to remove if 0.
+            return { ...item, quantity: newQty };
+          }
+          return item;
+        })
+        .filter((item) => item.quantity > 0);
     });
   };
 
@@ -133,7 +164,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totals = useMemo(() => {
     const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = cartItems.reduce((sum, item) => sum + item.quantity * item.price, 0);
+    const totalPrice = cartItems.reduce(
+      (sum, item) => sum + item.quantity * item.price,
+      0
+    );
     return { totalItems, totalPrice };
   }, [cartItems]);
 
