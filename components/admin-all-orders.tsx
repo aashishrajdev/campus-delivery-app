@@ -43,6 +43,8 @@ interface Order {
   storeTotal: number;
   status: string;
   createdAt: string;
+  address?: string;
+  roomNumber?: string;
 }
 
 type DateFilter = "ALL" | "TODAY" | "YESTERDAY" | "WEEK" | "MONTH" | "CUSTOM";
@@ -92,6 +94,8 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
       "Customer Name": order.userName,
       "Customer Phone": order.userPhone || "",
       "Customer Email": order.userEmail || "",
+      Address: order.address || "",
+      "Room Number": order.roomNumber || "",
       Source: order.sourceName,
       "Store Amount": order.storeTotal,
       "User Paid": order.totalAmount,
@@ -204,6 +208,7 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
                   <TableHead className="w-[100px]">Order ID</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Address</TableHead>
                   <TableHead>Store / Source</TableHead>
                   <TableHead>Store Amount</TableHead>
                   <TableHead>User Paid</TableHead>

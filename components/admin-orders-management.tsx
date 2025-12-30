@@ -59,44 +59,44 @@ export function AdminOrdersManagement({ orders }: { orders: any[] }) {
     });
   };
 
-  const handleStatusUpdate = (orderId: string, newStatus: string) => {
-    startTransition(async () => {
-      try {
-        const { updateOrderStatusAction } = await import(
-          "@/app/actions/order-actions"
-        );
-        const res = await updateOrderStatusAction(orderId, newStatus);
-        if (res.ok) {
-          toast.success(`Order status updated to ${newStatus}`);
-          router.refresh();
-        } else {
-          toast.error(res.error || "Failed to update order");
-        }
-      } catch (error) {
-        toast.error("Failed to update order status");
+  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    startTransition(true);
+    try {
+      const { updateOrderStatusAction } = await import(
+        "@/app/actions/order-actions"
+      );
+      const res = await updateOrderStatusAction(orderId, newStatus);
+      if (res.ok) {
+        toast.success(`Order status updated to ${newStatus}`);
+        router.refresh();
+      } else {
+        toast.error(res.error || "Failed to update order");
       }
-    });
+    } catch (error) {
+      toast.error("Failed to update order status");
+    } finally {
+      startTransition(false);
+    }
   };
 
-  const handleCancelOrder = (orderId: string) => {
+  const handleCancelOrder = async (orderId: string) => {
     if (!confirm("Are you sure you want to cancel this order?")) return;
 
-    startTransition(async () => {
-      try {
-        const { cancelOrderAction } = await import(
-          "@/app/actions/order-actions"
-        );
-        const res = await cancelOrderAction(orderId);
-        if (res.ok) {
-          toast.success("Order cancelled");
-          router.refresh();
-        } else {
-          toast.error(res.error || "Failed to cancel order");
-        }
-      } catch (error) {
-        toast.error("Failed to cancel order");
+    startTransition(true);
+    try {
+      const { cancelOrderAction } = await import("@/app/actions/order-actions");
+      const res = await cancelOrderAction(orderId);
+      if (res.ok) {
+        toast.success("Order cancelled");
+        router.refresh();
+      } else {
+        toast.error(res.error || "Failed to cancel order");
       }
-    });
+    } catch (error) {
+      toast.error("Failed to cancel order");
+    } finally {
+      startTransition(false);
+    }
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -229,9 +229,19 @@ export function AdminOrdersManagement({ orders }: { orders: any[] }) {
                           ))}
                         </div>
                         <div className="font-bold">Total: ₹{storeTotal}</div>
+                        {order.userName && (
+                          <div className="text-sm font-medium">
+                            Customer: {order.userName}
+                          </div>
+                        )}
                         {order.address && (
                           <div className="text-xs text-muted-foreground">
-                            Deliver to: {order.address}
+                            Hostel: {order.address}
+                          </div>
+                        )}
+                        {order.roomNumber && (
+                          <div className="text-xs text-muted-foreground">
+                            Room: {order.roomNumber}
                           </div>
                         )}
                         {order.userPhone && (
