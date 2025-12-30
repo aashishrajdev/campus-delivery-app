@@ -216,6 +216,26 @@ export function AdminOrdersManagement({ orders }: { orders: any[] }) {
                           >
                             {new Date(order.createdAt).toLocaleString()}
                           </span>
+                          <Badge
+                            variant={
+                              order.paymentMethod === "ONLINE" &&
+                                order.paymentStatus === "COMPLETED"
+                                ? "default"
+                                : "outline"
+                            }
+                            className={
+                              order.paymentMethod === "ONLINE" &&
+                                order.paymentStatus !== "COMPLETED"
+                                ? "text-yellow-600 border-yellow-600"
+                                : ""
+                            }
+                          >
+                            {order.paymentMethod === "COD"
+                              ? "COD"
+                              : order.paymentStatus === "COMPLETED"
+                                ? "Online (Paid)"
+                                : "Online (Pending)"}
+                          </Badge>
                         </div>
                         {/* Items */}
                         <div className="space-y-1">
@@ -254,29 +274,29 @@ export function AdminOrdersManagement({ orders }: { orders: any[] }) {
                       <div className="flex flex-row md:flex-col gap-2 justify-center min-w-[120px]">
                         {(order.status === "PENDING" ||
                           order.status === "CONFIRMED") && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleCancelOrder(order._id)}
-                          >
-                            Cancel
-                          </Button>
-                        )}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleCancelOrder(order._id)}
+                            >
+                              Cancel
+                            </Button>
+                          )}
 
                         {order.status !== "DELIVERED" &&
                           order.status !== "CANCELLED" && (
                             <>
                               {(order.status === "PENDING" ||
                                 order.status === "CONFIRMED") && (
-                                <Button
-                                  size="sm"
-                                  onClick={() =>
-                                    handleStatusUpdate(order._id, "PREPARING")
-                                  }
-                                >
-                                  Prepare
-                                </Button>
-                              )}
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleStatusUpdate(order._id, "PREPARING")
+                                    }
+                                  >
+                                    Prepare
+                                  </Button>
+                                )}
                               {order.status === "PREPARING" && (
                                 <Button
                                   size="sm"

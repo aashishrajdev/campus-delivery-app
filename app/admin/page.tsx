@@ -17,6 +17,7 @@ import { AdminOrderStats } from "@/components/admin-order-stats";
 import { AdminAllOrders } from "@/components/admin-all-orders";
 import { AdminOrdersManagement } from "@/components/admin-orders-management";
 import { ModeToggle } from "@/components/mode-toggle";
+import { AdminUserEmailDialog } from "@/components/admin-user-email-dialog";
 
 async function getAuth() {
   const cookieStore = await cookies();
@@ -136,6 +137,8 @@ export default async function AdminDashboard() {
                   Manage vending machines
                 </Link>
               </Button>
+              {/* Email Users Button */}
+              <AdminUserEmailDialog />
             </div>
             <Button variant="outline" asChild className="w-full rounded-lg">
               <Link href="/">View app homepage</Link>

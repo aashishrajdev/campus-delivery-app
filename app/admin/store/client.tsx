@@ -328,11 +328,11 @@ function OrdersManager({
                         <Badge
                           variant={
                             order.status === "DELIVERED" ||
-                            order.status === "COMPLETED"
+                              order.status === "COMPLETED"
                               ? "default"
                               : order.status === "CANCELLED"
-                              ? "destructive"
-                              : "secondary"
+                                ? "destructive"
+                                : "secondary"
                           }
                         >
                           {order.status}
@@ -372,6 +372,28 @@ function OrdersManager({
                           </div>
                         ))}
                       </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge
+                          variant={
+                            order.paymentMethod === "ONLINE" &&
+                              order.paymentStatus === "COMPLETED"
+                              ? "default"
+                              : "outline"
+                          }
+                          className={
+                            order.paymentMethod === "ONLINE" &&
+                              order.paymentStatus !== "COMPLETED"
+                              ? "text-yellow-600 border-yellow-600"
+                              : ""
+                          }
+                        >
+                          {order.paymentMethod === "COD"
+                            ? "COD"
+                            : order.paymentStatus === "COMPLETED"
+                              ? "Online (Paid)"
+                              : "Payment Pending"}
+                        </Badge>
+                      </div>
                       <div className="font-bold">
                         Total Earnings: ₹{storeTotal}
                       </div>
@@ -400,46 +422,46 @@ function OrdersManager({
                     <div className="flex flex-row md:flex-col gap-2 justify-center min-w-[120px]">
                       {(order.status === "PENDING" ||
                         order.status === "CONFIRMED") && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={async () => {
-                            if (
-                              !confirm(
-                                "Are you sure you want to cancel this order?"
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={async () => {
+                              if (
+                                !confirm(
+                                  "Are you sure you want to cancel this order?"
+                                )
                               )
-                            )
-                              return;
-                            const { cancelOrderAction } = await import(
-                              "@/app/actions/order-actions"
-                            );
-                            const res = await cancelOrderAction(order._id);
-                            if (res.ok) {
-                              toast.success("Order cancelled");
-                              router.refresh();
-                            } else {
-                              toast.error(res.error || "Failed to cancel");
-                            }
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                      )}
+                                return;
+                              const { cancelOrderAction } = await import(
+                                "@/app/actions/order-actions"
+                              );
+                              const res = await cancelOrderAction(order._id);
+                              if (res.ok) {
+                                toast.success("Order cancelled");
+                                router.refresh();
+                              } else {
+                                toast.error(res.error || "Failed to cancel");
+                              }
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
 
                       {order.status !== "DELIVERED" &&
                         order.status !== "CANCELLED" && (
                           <>
                             {(order.status === "PENDING" ||
                               order.status === "CONFIRMED") && (
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  handleStatusUpdate(order._id, "PREPARING")
-                                }
-                              >
-                                Prepare
-                              </Button>
-                            )}
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleStatusUpdate(order._id, "PREPARING")
+                                  }
+                                >
+                                  Prepare
+                                </Button>
+                              )}
                             {order.status === "PREPARING" && (
                               <Button
                                 size="sm"
@@ -689,12 +711,12 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
             image: newImage,
             productId: item.productId
               ? {
-                  ...item.productId,
-                  name: newName,
-                  Description: newDesc,
-                  price: newPrice,
-                  image: newImage,
-                }
+                ...item.productId,
+                name: newName,
+                Description: newDesc,
+                price: newPrice,
+                image: newImage,
+              }
               : undefined,
             availability:
               type === "store" ? newAvailability : item.availability,
@@ -820,19 +842,18 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                         ) : (
                           <Badge
                             variant={isOutOfStock ? "destructive" : "secondary"}
-                            className={`capitalize text-[10px] h-5 px-1.5 ${
-                              !isOutOfStock && quantity <= 10
+                            className={`capitalize text-[10px] h-5 px-1.5 ${!isOutOfStock && quantity <= 10
                                 ? "bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/20"
                                 : !isOutOfStock
-                                ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/20"
-                                : ""
-                            }`}
+                                  ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/20"
+                                  : ""
+                              }`}
                           >
                             {isOutOfStock
                               ? "Out of Stock"
                               : quantity <= 10
-                              ? "Low Stock"
-                              : `In Stock: ${quantity}`}
+                                ? "Low Stock"
+                                : `In Stock: ${quantity}`}
                           </Badge>
                         )}
                       </div>
@@ -885,8 +906,8 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                       isNew
                         ? "veg"
                         : editingItem.productId?.type ||
-                          editingItem.type ||
-                          "veg"
+                        editingItem.type ||
+                        "veg"
                     }
                   >
                     <SelectTrigger>
@@ -910,8 +931,8 @@ function ProductsManager({ data, type }: { data: any; type: string }) {
                     isNew
                       ? ""
                       : editingItem.productId?.Description ||
-                        editingItem.description ||
-                        ""
+                      editingItem.description ||
+                      ""
                   }
                 />
               </div>

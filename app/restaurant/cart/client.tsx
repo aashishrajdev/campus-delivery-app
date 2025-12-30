@@ -105,8 +105,8 @@ export default function CartClient() {
   // Delivery Fee Logic (User: >100 Free, else ? Let's keep existing or simplified)
   const deliveryFee = itemTotal > 100 ? 0 : 20;
 
-  const grandTotal = itemTotal + handlingFee + gst + deliveryFee;
-
+  // const grandTotal = itemTotal + handlingFee + gst + deliveryFee;
+  const grandTotal = itemTotal;
   const handlePlaceOrder = async () => {
     if (!selectedHostel || !roomNumber) {
       toast.error("Please provide your complete delivery address.");

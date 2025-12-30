@@ -1,8 +1,7 @@
 "use server";
 
 import dbConnect from "@/app/db";
-import VendingMachine from "@/app/models/vendingMachine.model";
-import Store from "@/app/models/store.model";
+import VendingMachine from "@/app/models/vendingMachine.model.js";
 import { revalidatePath } from "next/cache";
 
 export async function createOrderAction(

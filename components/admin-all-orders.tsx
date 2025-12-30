@@ -45,6 +45,9 @@ interface Order {
   createdAt: string;
   address?: string;
   roomNumber?: string;
+  paymentMethod?: string;
+  paymentStatus?: string;
+  items: any[];
 }
 
 type DateFilter = "ALL" | "TODAY" | "YESTERDAY" | "WEEK" | "MONTH" | "CUSTOM";
@@ -97,6 +100,15 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
       Address: order.address || "",
       "Room Number": order.roomNumber || "",
       Source: order.sourceName,
+      Items: order.items
+        .map((i) => `${i.quantity}x ${i.name}`)
+        .join(", "),
+      "Payment Method":
+        order.paymentMethod === "COD"
+          ? "COD"
+          : order.paymentStatus === "COMPLETED"
+            ? "Online (Paid)"
+            : "Online (Pending)",
       "Store Amount": order.storeTotal,
       "User Paid": order.totalAmount,
       Status: order.status,
@@ -114,6 +126,8 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
       { wch: 15 }, // Phone
       { wch: 25 }, // Email
       { wch: 20 }, // Source
+      { wch: 30 }, // Items
+      { wch: 15 }, // Payment Method
       { wch: 12 }, // Store Amt
       { wch: 12 }, // User Paid
       { wch: 15 }, // Status
@@ -208,8 +222,9 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
                   <TableHead className="w-[100px]">Order ID</TableHead>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Address</TableHead>
+                  <TableHead>Items</TableHead>
                   <TableHead>Store / Source</TableHead>
+                  <TableHead>Payment</TableHead>
                   <TableHead>Store Amount</TableHead>
                   <TableHead>User Paid</TableHead>
                   <TableHead>Status</TableHead>
@@ -218,7 +233,7 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
               <TableBody>
                 {filteredOrders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center h-24">
+                    <TableCell colSpan={9} className="text-center h-24">
                       No orders found.
                     </TableCell>
                   </TableRow>
@@ -249,10 +264,47 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
                               {order.userEmail}
                             </span>
                           )}
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {order.address}, {order.roomNumber}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1 max-w-[200px]">
+                          {(order.items || []).map((item, idx) => (
+                            <div key={idx} className="text-xs">
+                              <span className="font-semibold">
+                                {item.quantity}x
+                              </span>{" "}
+                              {item.name}
+                            </div>
+                          ))}
                         </div>
                       </TableCell>
                       <TableCell>
                         <span className="font-medium">{order.sourceName}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            order.paymentMethod === "ONLINE" &&
+                              order.paymentStatus === "COMPLETED"
+                              ? "default"
+                              : "outline"
+                          }
+                          className={
+                            order.paymentMethod === "ONLINE" &&
+                              order.paymentStatus !== "COMPLETED"
+                              ? "text-yellow-600 border-yellow-600"
+                              : ""
+                          }
+                        >
+                          {order.paymentMethod === "COD"
+                            ? "COD"
+                            : order.paymentStatus === "COMPLETED"
+                              ? "Online"
+                              : "Online (Pending)"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="font-medium text-blue-600 dark:text-blue-400">
                         ₹{order.storeTotal}
@@ -266,8 +318,8 @@ export function AdminAllOrders({ orders }: { orders: Order[] }) {
                             order.status === "DELIVERED"
                               ? "default"
                               : order.status === "CANCELLED"
-                              ? "destructive"
-                              : "secondary"
+                                ? "destructive"
+                                : "secondary"
                           }
                           className="capitalize"
                         >
