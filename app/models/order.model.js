@@ -104,6 +104,11 @@ const OrderSchema = new Schema(
   { timestamps: true, strict: false }
 );
 
+// Optimize lookups for Store/Vending orders and Aggregations
+OrderSchema.index({ "items.sourceId": 1 });
+OrderSchema.index({ userId: 1 }); // Optimize getUserOrders
+
+
 // Force recompilation if schema changed (Development helper)
 // if (process.env.NODE_ENV === 'development') {
 //     delete mongoose.models.Order;

@@ -61,9 +61,36 @@ export default function VendingMachineDetails({
         setLoading(false);
       }
     };
-    const intervalId = setInterval(loadMachine, 2000);
     loadMachine();
+  }, [id]);
 
+  useEffect(() => {
+    const pollStock = async () => {
+      try {
+        const { getVendingMachineStock } = await import("../actions");
+        const updates = await getVendingMachineStock(id);
+
+        if (updates) {
+          setItems((prev) =>
+            prev.map((item) => {
+              const update = updates.find((u: any) => u.productId === item._id);
+              if (update && update.quantity !== item.quantity) {
+                return {
+                  ...item,
+                  quantity: update.quantity,
+                  availability: update.quantity > 0 ? "inStock" : "outOfStock",
+                };
+              }
+              return item;
+            })
+          );
+        }
+      } catch (e) {
+        console.error("Stock poll error", e);
+      }
+    };
+
+    const intervalId = setInterval(pollStock, 2000);
     return () => clearInterval(intervalId);
   }, [id]);
 

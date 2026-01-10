@@ -520,9 +520,14 @@ export async function getStoreOrders(storeId: string) {
     // Filter items to only show those belonging to this store
     const filteredOrders = orders
       .map((order: any) => {
-        const relevantItems = (order.items || []).filter(
-          (item: any) => String(item.sourceId) === String(storeId)
-        );
+        const relevantItems = (order.items || [])
+          .filter((item: any) => String(item.sourceId) === String(storeId))
+          .map((item: any) => {
+            // OPTIMIZATION: Remove image from items to save bandwidth
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { image, ...rest } = item;
+            return rest;
+          });
         return {
           ...order,
           items: relevantItems,
@@ -656,8 +661,16 @@ export async function getAllOrdersForAdmin() {
         0
       );
 
+      // OPTIMIZATION: Remove large image strings from items to save bandwidth
+      const cleanItems = (order.items || []).map((item: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { image, ...rest } = item;
+        return rest;
+      });
+
       return {
         ...order,
+        items: cleanItems,
         sourceName,
         storeTotal,
         userName: order.userId?.name || "Unknown User",

@@ -73,7 +73,7 @@ export default async function StoresAdminPage() {
            If not, I'll create a new page for single store admin details.
         */}
 
-        <AutoRefresh />
+        <AutoRefresh intervalMs={60000} />
       </div>
     );
   } catch (err) {
