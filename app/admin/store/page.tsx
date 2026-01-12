@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import dbConnect from "@/app/db";
 import Store from "@/app/models/store.model";
 import VendingMachine from "@/app/models/vendingMachine.model";
-import "@/app/models/product.model"; // Ensure model is registered
+import "@/app/models/product.model";
+// Ensure model is registered
 import { StoreDashboardClient } from "./client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";

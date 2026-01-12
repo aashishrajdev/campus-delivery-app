@@ -35,6 +35,25 @@ export async function getAllVendingMachines() {
     return JSON.parse(JSON.stringify(machines));
   } catch (error) {
     console.error("Error fetching vending machines:", error);
-    return [];
+  }
+}
+
+export async function getVendingMachineStock(id: string) {
+  try {
+    await dbConnect();
+
+    const vm = await VendingMachine.findOne({ id }).select('items.productId items.quantity').lean();
+
+    if (!vm) return null;
+    const items = vm.items || [];
+
+    // Return minimal data: productId and quantity
+    return items.map((item: any) => ({
+      productId: item.productId ? item.productId.toString() : null,
+      quantity: item.quantity
+    })).filter((item: any) => item.productId);
+  } catch (error) {
+    console.error("Error fetching vending machine stock:", error);
+    return null;
   }
 }

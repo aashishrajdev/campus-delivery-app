@@ -17,23 +17,34 @@ export default function VendingClient({ initialMachines }: VendingClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const fetchMachines = async () => {
+    // Initial fetch handled by props, but we can setup polling for status
+    const pollStatus = async () => {
       try {
-        const data = await getVendingMachinesAction(Date.now());
-        const mapped = data.map((m: any) => ({
-          id: m.id,
-          name: m.names,
-          location: m.location,
-          hostel: m.hostel || m.building || "",
-          type: m.type,
-          image: m.image,
-        }));
-        setVendingLocations(mapped);
+        const { getVendingMachinesStatus } = await import("../actions");
+        const statusUpdates = await getVendingMachinesStatus();
+
+        setVendingLocations((prev) => {
+          return prev.map((machine) => {
+            const update = statusUpdates.find((u: any) => u.id === machine.id);
+            if (update) {
+              // Merge updates, preserve image if not in update (it's not)
+              return {
+                ...machine,
+                name: update.name,
+                location: update.location,
+                type: update.type,
+                // Preserving existing image
+              };
+            }
+            return machine;
+          });
+        });
       } catch (err) {
-        console.error("Failed to update machines", err);
+        console.error("Failed to update machines status", err);
       }
     };
-    const interval = setInterval(fetchMachines, 30000);
+
+    const interval = setInterval(pollStatus, 30000);
     return () => clearInterval(interval);
   }, []);
 

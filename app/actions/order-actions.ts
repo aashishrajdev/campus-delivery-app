@@ -10,7 +10,7 @@ import { sendOrderNotification } from "@/app/utils/mail";
 import path from "path";
 import fs from "fs";
 
-// Helper to manually parse env file
+
 function getEnvManual(key: string): string | undefined {
   try {
     const envPath = path.resolve(process.cwd(), ".env.local");
@@ -19,19 +19,11 @@ function getEnvManual(key: string): string | undefined {
     if (fs.existsSync(envPath)) {
       const content = fs.readFileSync(envPath, "utf8");
 
-      // Debug: Log all keys found in the file (safely)
+
       const allKeys = content.match(/^\s*([A-Z_]+)\s*=/gm) || [];
 
 
-      // Robust regex:
-      // 1. Start of line (with optional whitespace)
-      // 2. Key
-      // 3. Optional whitespace, =, optional whitespace
-      // 4. Value group:
-      //    - optional quote
-      //    - content (lazy)
-      //    - optional quote
-      // 5. Ignore trailing comments or whitespace
+
       const regex = new RegExp(
         `^\\s*${key}\\s*=\\s*["']?(.*?)["']?\\s*(?:#.*)?$`,
         "m"
@@ -91,7 +83,6 @@ export async function createOrder({
     });
 
 
-
     let razorpayOrderData = null;
 
     if (paymentMethod === "ONLINE") {
@@ -136,14 +127,14 @@ export async function createOrder({
         return { success: false, error: "Invalid total amount." };
       }
 
-      // Initialize Razorpay instance with the fresh keys
+
       const razorpayInstance = new Razorpay({
         key_id: keyId,
         key_secret: keySecret,
       });
 
       const options = {
-        amount: Math.round(totalAmount * 100), // amount in lowest currency unit (paise)
+        amount: Math.round(totalAmount * 100),
         currency: "INR",
         receipt: `receipt_${new Date().getTime()}`,
       };
@@ -154,15 +145,14 @@ export async function createOrder({
 
     const savedOrder = await newOrder.save();
 
-    // Add to user history
+
     await User.findByIdAndUpdate(userId, {
       $push: { orderHistory: savedOrder._id },
     });
 
-    // Notify Stores
+
     try {
-      // Group items by source to avoid duplicate emails to same store for mixed items?
-      // Though normally cart is one store. But let's be safe.
+
       const sourceGroups: Record<string, any[]> = {};
       items.forEach((item: any) => {
         if (item.sourceModel === "Store" && item.sourceId) {
@@ -173,17 +163,16 @@ export async function createOrder({
 
       // Send emails
       for (const [sid, sItems] of Object.entries(sourceGroups)) {
-        // Try custom ID then ObjectId
+
         let store = await Store.findOne({ id: sid });
         if (!store && Types.ObjectId.isValid(sid))
           store = await Store.findById(sid);
 
-        // If username is an email, send notification
+
         if (store && store.email) {
           await sendOrderNotification(store.email, {
             id: savedOrder._id.toString(),
-            totalAmount: totalAmount, // This is grand total, maybe calculate store total?
-            // calculate store total
+            totalAmount: totalAmount,
             items: sItems,
           });
         }
@@ -199,7 +188,7 @@ export async function createOrder({
     };
   } catch (error: any) {
     console.error("Error creating order:", error);
-    // detailed logging
+
     if (error.error) console.error("Razorpay Error Details:", error.error);
 
     const errorMessage =
@@ -225,11 +214,7 @@ export async function verifyPayment({
     const order = await Order.findById(orderId);
     if (!order) throw new Error("Order not found");
 
-    // Dynamic load for verification as well
-    // try {
-    //     const envPath = path.resolve(process.cwd(), '.env.local');
-    //     dotenv.config({ path: envPath, override: true });
-    // } catch (e) { /* ignore */ }
+
 
     let keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keySecret) keySecret = getEnvManual("RAZORPAY_KEY_SECRET");
@@ -245,7 +230,7 @@ export async function verifyPayment({
     if (generated_signature === razorpaySignature) {
       order.paymentStatus = "COMPLETED";
       order.razorpayPaymentId = razorpayPaymentId;
-      order.status = "CONFIRMED"; // Auto confirm on payment?
+      order.status = "CONFIRMED";
       await order.save();
       return { success: true };
     } else {
@@ -262,91 +247,84 @@ export async function verifyPayment({
 export async function getUserOrders(userId: string) {
   await dbConnect();
   try {
-    // Query the Order collection directly instead of relying on user.orderHistory array.
-    // This is more robust and finds "orphaned" orders.
+
     const orders = await Order.find({ userId: userId }).sort({ createdAt: -1 });
     const ordersJson = JSON.parse(JSON.stringify(orders));
 
-    // Enrich orders with source details (Name, Phone)
-    // We can do this efficiently by gathering all unique source IDs first
-    // But for simplicity and acceptable performance with reasonable order history size,
-    // we can just lookup as we map or do a Promise.all
-    // Let's try to be smart about it.
+
 
     const sourceIds = new Set();
     ordersJson.forEach((order: any) => {
       if (order.items && order.items.length > 0) {
-        // Usually an order is from ONE source, but our schema allows multiple?
-        // Schema has items array, each item has sourceId.
-        // In practice, a cart is usually per-store.
-        // let's grab unique sourceIds from all items in all orders.
+
         order.items.forEach((item: any) => {
           if (item.sourceId) sourceIds.add(item.sourceId);
         });
       }
     });
 
-    const storeMap: Record<string, { name: string; phone: string | null }> = {}; // id -> { name, phone }
+    const storeMap: Record<string, { name: string; phone: string | null }> = {};
     const vendingMap: Record<string, { name: string; phone: string | null }> =
-      {}; // id -> { name, phone }
+      {};
 
-    // Fetch details for all identified sources
-    // We have to check both Stores and VendingMachines because sourceIds are mixed?
-    // Actually items have sourceModel: 'Store' or 'VendingMachine'.
-    // Let's split IDs by type.
 
-    const storeIds = new Set();
-    const vendingIds = new Set();
+
+    const storeIds = new Set<string>();
+    const vendingIds = new Set<string>();
 
     ordersJson.forEach((order: any) => {
       if (order.items) {
         order.items.forEach((item: any) => {
-          if (item.sourceModel === "Store") storeIds.add(item.sourceId);
+          if (item.sourceModel === "Store") storeIds.add(String(item.sourceId));
           else if (item.sourceModel === "VendingMachine")
-            vendingIds.add(item.sourceId);
+            vendingIds.add(String(item.sourceId));
         });
       }
     });
 
-    // Loop stores
-    for (const sid of Array.from(storeIds)) {
+
+    const storeIdsArray = Array.from(storeIds);
+    if (storeIdsArray.length > 0) {
       try {
-        // Try finding by custom ID first (as String)
-        let store: any = await Store.findOne({ id: sid }).select(
-          "name phoneNumber"
-        );
-        if (!store && Types.ObjectId.isValid(sid as string)) {
-          store = await Store.findById(sid).select("name phoneNumber");
-        }
-        if (store) {
-          storeMap[sid as string] = {
-            name: store.name,
-            phone: store.phoneNumber,
-          };
-        }
+        const objectIds = storeIdsArray
+          .filter((id) => Types.ObjectId.isValid(id))
+          .map((id) => new Types.ObjectId(id));
+        const customIds = storeIdsArray.filter((id) => !Types.ObjectId.isValid(id));
+
+        const stores = await Store.find({
+          $or: [{ _id: { $in: objectIds } }, { id: { $in: customIds } }],
+        } as any).select("name phoneNumber id");
+
+        stores.forEach((store: any) => {
+
+          storeMap[store._id.toString()] = { name: store.name, phone: store.phoneNumber };
+          if (store.id) storeMap[store.id] = { name: store.name, phone: store.phoneNumber };
+        });
       } catch (e) {
-        console.error(`Failed to fetch store ${sid}`, e);
+        console.error("Failed to batch fetch stores", e);
       }
     }
 
-    // Loop vending machines
-    for (const vid of Array.from(vendingIds)) {
-      try {
-        let vm: any = null;
-        if (Types.ObjectId.isValid(vid as string)) {
-          vm = await VendingMachine.findById(vid).select("name names");
-        }
-        if (!vm) {
-          // Try by custom id
-          vm = await VendingMachine.findOne({ id: vid }).select("name names");
-        }
 
-        if (vm) {
+    const vendingIdsArray = Array.from(vendingIds);
+    if (vendingIdsArray.length > 0) {
+      try {
+        const objectIds = vendingIdsArray
+          .filter((id) => Types.ObjectId.isValid(id))
+          .map((id) => new Types.ObjectId(id));
+        const customIds = vendingIdsArray.filter((id) => !Types.ObjectId.isValid(id));
+
+        const vms = await VendingMachine.find({
+          $or: [{ _id: { $in: objectIds } }, { id: { $in: customIds } }],
+        } as any).select("name names id");
+
+        vms.forEach((vm: any) => {
           const vName = vm.names || vm.name || "Vending Machine";
-          vendingMap[vid as string] = { name: vName, phone: null };
-        }
+          vendingMap[vm._id.toString()] = { name: vName, phone: null };
+          if (vm.id) vendingMap[vm.id] = { name: vName, phone: null };
+        });
       } catch (e) {
-        console.error(`Failed to fetch VM ${vid}`, e);
+        console.error("Failed to batch fetch VMs", e);
       }
     }
 
@@ -364,7 +342,7 @@ export async function getUserOrders(userId: string) {
 
         return {
           ...item,
-          sourceName: details.name || item.name, // Fallback to item name if source unknown? No, maybe just "Unknown Store"
+          sourceName: details.name || item.name,
           sourcePhone: details.phone,
         };
       });
@@ -476,9 +454,7 @@ export async function getAdminStats() {
 export async function settleOrders(sourceId: string) {
   await dbConnect();
   try {
-    // Mark all items from this source as settled
-    // This is complex because we need to update 'items' inside 'Order'.
-    // We can use array filters.
+
 
     await Order.updateMany(
       { "items.sourceId": sourceId, "items.isSettled": false },
@@ -498,16 +474,7 @@ export async function settleOrders(sourceId: string) {
 export async function getStoreOrders(storeId: string) {
   await dbConnect();
   try {
-    // Find orders that have at least one item from this store
-    // We need to filter items in the result to only show items from this store?
-    // User wants to see the order. Usually showing the full order is okay,
-    // OR showing only relevant items.
-    // For simplicity and correctness for the Store Owner, they should probably only see THEIR items.
-    // But the Order object structure has 'items' array.
-    // I'll return the full order but maybe the UI should highlight their items.
-    // The query finds orders where "items.sourceId" matches.
-    // NOTE: storeId might be the custom 'id' string (e.g. "2") or an ObjectId string.
-    // Our Store model uses custom 'id' for sourceId in items (usually).
+
 
     const orders = await Order.find({ "items.sourceId": storeId })
       .sort({ createdAt: -1 })
@@ -520,9 +487,13 @@ export async function getStoreOrders(storeId: string) {
     // Filter items to only show those belonging to this store
     const filteredOrders = orders
       .map((order: any) => {
-        const relevantItems = (order.items || []).filter(
-          (item: any) => String(item.sourceId) === String(storeId)
-        );
+        const relevantItems = (order.items || [])
+          .filter((item: any) => String(item.sourceId) === String(storeId))
+          .map((item: any) => {
+
+            const { image, ...rest } = item;
+            return rest;
+          });
         return {
           ...order,
           items: relevantItems,
@@ -543,8 +514,7 @@ export async function cancelOrderAction(orderId: string) {
     const order = await Order.findById(orderId);
     if (!order) return { ok: false, error: "Order not found" };
 
-    // Allow cancellation only for PENDING or CONFIRMED
-    // (customize as needed based on logic)
+
     if (["PENDING", "CONFIRMED"].includes(order.status)) {
       order.status = "CANCELLED";
       await order.save();
@@ -581,62 +551,66 @@ export async function getAllOrdersForAdmin() {
     const vendingMap: Record<string, { name: string; phone: string | null }> =
       {};
 
-    const storeIds = new Set();
-    const vendingIds = new Set();
+    const storeIds = new Set<string>();
+    const vendingIds = new Set<string>();
 
     ordersJson.forEach((order: any) => {
       if (order.items) {
         order.items.forEach((item: any) => {
-          if (item.sourceModel === "Store") storeIds.add(item.sourceId);
+          if (item.sourceModel === "Store") storeIds.add(String(item.sourceId));
           else if (item.sourceModel === "VendingMachine")
-            vendingIds.add(item.sourceId);
+            vendingIds.add(String(item.sourceId));
         });
       }
     });
 
-    for (const sid of Array.from(storeIds)) {
+
+    const storeIdsArray = Array.from(storeIds);
+    if (storeIdsArray.length > 0) {
       try {
-        let store: any = await Store.findOne({ id: sid }).select(
-          "name phoneNumber"
-        );
-        if (!store && Types.ObjectId.isValid(sid as string)) {
-          store = await Store.findById(sid).select("name phoneNumber");
-        }
-        if (store) {
-          storeMap[sid as string] = {
-            name: store.name,
-            phone: store.phoneNumber,
-          };
-        }
+        const objectIds = storeIdsArray
+          .filter((id) => Types.ObjectId.isValid(id))
+          .map((id) => new Types.ObjectId(id));
+        const customIds = storeIdsArray.filter((id) => !Types.ObjectId.isValid(id));
+
+        const stores = await Store.find({
+          $or: [{ _id: { $in: objectIds } }, { id: { $in: customIds } }],
+        } as any).select("name phoneNumber id");
+
+        stores.forEach((store: any) => {
+          storeMap[store._id.toString()] = { name: store.name, phone: store.phoneNumber };
+          if (store.id) storeMap[store.id] = { name: store.name, phone: store.phoneNumber };
+        });
       } catch (e) {
-        console.error(`Failed to fetch store ${sid}`, e);
+        console.error("Failed to batch fetch stores", e);
       }
     }
 
-    for (const vid of Array.from(vendingIds)) {
-      try {
-        let vm: any = null;
-        if (Types.ObjectId.isValid(vid as string)) {
-          vm = await VendingMachine.findById(vid).select("name names");
-        }
-        if (!vm) {
-          vm = await VendingMachine.findOne({ id: vid }).select("name names");
-        }
 
-        if (vm) {
+    const vendingIdsArray = Array.from(vendingIds);
+    if (vendingIdsArray.length > 0) {
+      try {
+        const objectIds = vendingIdsArray
+          .filter((id) => Types.ObjectId.isValid(id))
+          .map((id) => new Types.ObjectId(id));
+        const customIds = vendingIdsArray.filter((id) => !Types.ObjectId.isValid(id));
+
+        const vms = await VendingMachine.find({
+          $or: [{ _id: { $in: objectIds } }, { id: { $in: customIds } }],
+        } as any).select("name names id");
+
+        vms.forEach((vm: any) => {
           const vName = vm.names || vm.name || "Vending Machine";
-          vendingMap[vid as string] = { name: vName, phone: null };
-        }
+          vendingMap[vm._id.toString()] = { name: vName, phone: null };
+          if (vm.id) vendingMap[vm.id] = { name: vName, phone: null };
+        });
       } catch (e) {
-        console.error(`Failed to fetch VM ${vid}`, e);
+        console.error("Failed to batch fetch VMs", e);
       }
     }
 
     const enrichedOrders = ordersJson.map((order: any) => {
-      // Assuming all items in an order are from the same source for simplicity of display,
-      // or we just take the first source we find to label the order source.
-      // But items might be mixed? Usually not?
-      // Let's resolve source for the order display based on the first item.
+
 
       const firstItem = order.items[0];
       let sourceName = "Unknown Source";
@@ -656,8 +630,16 @@ export async function getAllOrdersForAdmin() {
         0
       );
 
+
+      const cleanItems = (order.items || []).map((item: any) => {
+
+        const { image, ...rest } = item;
+        return rest;
+      });
+
       return {
         ...order,
+        items: cleanItems,
         sourceName,
         storeTotal,
         userName: order.userId?.name || "Unknown User",
@@ -679,8 +661,7 @@ export async function cancelOrderActionV2(orderId: string) {
     const order = await Order.findById(orderId);
     if (!order) return { ok: false, error: "Order not found" };
 
-    // Allow cancellation if PENDING or CONFIRMED
-    // (Assuming CONFIRMED is before PREPARING)
+
     if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
       return { ok: false, error: "Order cannot be cancelled at this stage" };
     }
@@ -704,12 +685,12 @@ export async function updateOrderStatusAction(
     const order = await Order.findById(orderId);
     if (!order) return { ok: false, error: "Order not found" };
 
-    // Allow status updates only for non-cancelled, non-delivered orders
+
     if (order.status === "CANCELLED" || order.status === "DELIVERED") {
       return { ok: false, error: "Cannot update status for this order" };
     }
 
-    // Validate status transition
+
     const validStatuses = [
       "PENDING",
       "CONFIRMED",
