@@ -8,7 +8,8 @@ import Product from "@/app/models/product.model";
 
 const getCachedStores = unstable_cache(
   async () => {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) return [];
 
     const stores = await Store.find({}).populate("items.productId").lean();
     return JSON.parse(JSON.stringify(stores)).map((store: any) => ({
@@ -26,7 +27,8 @@ export async function getStoresAction(timestamp?: number) {
 
 const getCachedVendingMachines = unstable_cache(
   async () => {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) return [];
     const vms = await VendingMachine.find({}).lean();
     return JSON.parse(JSON.stringify(vms)).map((vm: any) => ({
       ...vm,
@@ -48,7 +50,8 @@ export async function getVendingMachinesAction(timestamp?: number) {
 
 const getCachedVendingStatus = unstable_cache(
   async () => {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) return [];
     const vms = await VendingMachine.find({}).select("id names location type").lean();
     return JSON.parse(JSON.stringify(vms)).map((vm: any) => ({
       id: vm.id || vm._id,
@@ -66,7 +69,8 @@ export async function getVendingMachinesStatus() {
 }
 
 export async function getVendingMachineById(id: string) {
-  await dbConnect();
+  const conn = await dbConnect();
+  if (!conn) return null;
 
   const vm = await VendingMachine.findOne({ id })
     .populate("items.productId")
@@ -78,7 +82,8 @@ export async function getVendingMachineById(id: string) {
 }
 
 export async function getVendingMachineStock(id: string) {
-  await dbConnect();
+  const conn = await dbConnect();
+  if (!conn) return null;
   const vm = await VendingMachine.findOne({ id }).select('items.productId items.quantity').lean();
 
   if (!vm) return null;
