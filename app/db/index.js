@@ -1,21 +1,11 @@
 import mongoose from "mongoose";
 
-const MONGO_URI = process.env.MONGO_URI;
-
-if (!MONGO_URI) {
-  // Fail fast and with a clear message in dev
-  console.error("Missing MONGO_URI in environment. Set it in .env.local");
-}
-
-let cached = global._mongooseCache;
-if (!cached) {
-  cached = global._mongooseCache = { conn: null, promise: null };
-}
-
 const dbConnect = async () => {
+  const MONGO_URI = process.env.MONGO_URI;
+
   if (cached.conn) return cached.conn;
   if (!MONGO_URI) {
-    console.error("MONGO_URI is not set");
+    console.error("MONGO_URI is not set in process.env");
     return null;
   }
   if (!cached.promise) {
@@ -31,7 +21,7 @@ const dbConnect = async () => {
   } catch (e) {
     cached.promise = null;
     console.error("Database connection failed:", e);
-    return null;
+    throw e;
   }
   return cached.conn;
 };
